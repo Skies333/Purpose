@@ -446,6 +446,14 @@ html{-webkit-tap-highlight-color:transparent}
 .profile .pf-h>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pf-name{font-family:var(--display);font-size:24px;font-weight:800}
 #name-msg.ok{color:var(--lime)}
+.pf-form{display:flex;flex-direction:column;gap:12px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>span{font-size:12.5px;font-weight:700;color:var(--muted)}
+.fld input{background:var(--surface2);border:1px solid var(--line);color:var(--ink);font:600 16px var(--body);padding:12px 14px;border-radius:14px;width:100%;box-sizing:border-box}
+.pf-goal button{white-space:nowrap;font-size:13.5px;padding:10px 6px}
+.fld-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.back-link{padding-top:calc(20px + env(safe-area-inset-top));align-self:flex-start}
+.top.acc-top{padding-top:0}
 .acc-link,.name-cta{flex-direction:row;align-items:center;gap:14px;text-align:left}
 .acc-link>div,.name-cta>div{flex:1;display:flex;flex-direction:column;min-width:0}
 .acc-link small,.name-cta small{color:var(--muted);font-size:13px}
@@ -1405,7 +1413,7 @@ function render(anim) {
   const y = window.scrollY;
   main.innerHTML = VIEWS[route]();
   main.querySelectorAll('[data-fig]').forEach(n => makeFigure(n, n.dataset.fig, { phase: +n.dataset.phase || 0 }));
-  document.querySelectorAll('.nav [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === route));
+  document.querySelectorAll('.nav [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === (route === 'conta' ? 'progresso' : route)));
   moveNavInd();
   if (anim) {
     animateIn(main);
@@ -1485,6 +1493,7 @@ function ring(v, max, size = 84) {
 
 const ZONE_FIG = { 'Corpo inteiro': 'burpee', 'Parte de cima': 'pushup', 'Pernas': 'squat', 'Core': 'climbers', 'HIIT': 'jacks', 'Mobilidade': 'dog' };
 /* ===== Conta: avatar e estado ===== */
+let PL_AIM = null;
 function avatar(sz) {
   const ini = (S.name || '').trim().charAt(0).toUpperCase();
   const linked = typeof CL !== 'undefined' && CL.user && !CL.user.is_anonymous;
@@ -1550,8 +1559,7 @@ const VIEWS = {
     const done = S.history.some(h => h.d === today());
     const wk = weekDays(), set = new Set(S.history.map(h => h.d)), nWeek = wk.filter(x => set.has(dkey(x))).length;
     return `
-    <div class="brandbar">${logo('loop')}<div class="bb-r">${cloudBadge()}<div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div></div>
-    ${S.name ? '' : `<button class="card name-cta" data-go="conta">${avatar(40)}<div><b>Como te chamas?</b><small>Põe o teu nome e guarda o progresso na tua conta.</small></div>${ic('next', 'chev')}</button>`}
+    <div class="brandbar">${logo('loop')}<div class="bb-r"><div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div></div>
     <header class="top home"><div><h1>${hi}${S.name ? ', ' + esc(S.name) : ''}!</h1><p class="muted">Treina com propósito. Hoje é ${DAYS[d.getDay()].toLowerCase()}.</p></div></header>
     ${modeSwitch()}
 
@@ -1642,7 +1650,7 @@ const VIEWS = {
     const W = S.weights.slice(-20);
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
-    <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>${accountLine()}</small></div>${ic('next', 'chev')}</button>
+    <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>Nome, peso, objetivo e sincronização</small></div>${ic('next', 'chev')}</button>
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
@@ -1670,13 +1678,23 @@ const VIEWS = {
   },
 
   conta() {
+    PL_AIM = null;
     const tg = (id, on, t, s) => `<label class="tg"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span class="sw"></span><div><b>${t}</b><small>${s}</small></div></label>`;
     return `
-    <header class="top"><div><h1>Conta</h1><p class="muted">O teu perfil, a sincronização e as definições da app.</p></div></header>
+    <button class="link back-link" data-go="progresso">${ic('back')} Progresso</button>
+    <header class="top acc-top"><div><h1>Conta</h1><p class="muted">O teu perfil, a sincronização e as definições da app.</p></div></header>
     <section class="card profile">
-      <div class="pf-h">${avatar(72)}<div><b class="pf-name">${S.name ? esc(S.name) : 'Sem nome'}</b><small class="muted">${accountLine()}</small></div></div>
-      <form class="inline" id="name-f"><label for="name-in" class="sr">Primeiro nome</label><input id="name-in" type="text" maxlength="20" autocomplete="given-name" placeholder="O teu primeiro nome" value="${esc(S.name || '')}"><button class="btn lime sm" type="submit">Guardar</button></form>
-      <p class="muted small" id="name-msg">Aparece na saudação do Início.</p>
+      <div class="pf-h">${avatar(72)}<div><b class="pf-name">${S.name ? esc(S.name) : 'O teu perfil'}</b><small class="muted">${accountLine()}</small></div></div>
+      <form class="pf-form" id="name-f">
+        <label class="fld" for="name-in"><span>Primeiro nome</span><input id="name-in" type="text" maxlength="20" autocomplete="given-name" placeholder="Ex.: Dinis" value="${esc(S.name || '')}"></label>
+        <div class="fld-row">
+          <label class="fld" for="pf-kg"><span>Peso atual (kg)</span><input id="pf-kg" type="number" step="0.1" min="30" max="200" inputmode="decimal" placeholder="72,5" value="${S.weights.length ? S.weights[S.weights.length - 1].kg : ''}"></label>
+          <label class="fld" for="pf-cm"><span>Altura (cm)</span><input id="pf-cm" type="number" step="1" min="120" max="230" inputmode="numeric" placeholder="178" value="${S.height || ''}"></label>
+        </div>
+        <div class="fld"><span>Objetivo</span><div class="seg pf-goal" role="radiogroup">${[['massa','Ganhar massa'],['definir','Definir'],['manter','Manter']].map(([k, l]) => `<button type="button" role="radio" aria-checked="${(S.aim || 'massa') === k}" class="${(S.aim || 'massa') === k ? 'on' : ''}" data-aim="${k}">${l}</button>`).join('')}</div></div>
+        <button class="btn lime full" type="submit">Guardar perfil</button>
+        <p class="muted small center" id="name-msg">O peso fica também no gráfico do Progresso. O objetivo ajusta a calculadora de calorias.</p>
+      </form>
     </section>
     ${cloudCard()}
     <div class="sec-h"><h3>Treino</h3></div>
@@ -1705,10 +1723,10 @@ const VIEWS = {
     return `
     <header class="top"><div><h1>Dicas & nutrição</h1><p class="muted">O treino estimula o músculo. A comida e o sono constroem-no.</p></div></header>
     <section class="card calc">
-      <h3>Calculadora para ganhar massa</h3>
+      <h3>Calculadora · ${({ massa: 'ganhar massa', definir: 'definir', manter: 'manter o peso' })[S.aim || 'massa']}</h3>
       <form class="inline" id="cform"><label for="ckg" class="sr">Peso em kg</label><input id="ckg" type="number" step="0.5" min="35" max="200" value="${lastW || 70}" inputmode="decimal"><span>kg</span></form>
       <div class="calc-out" id="cout"></div>
-      <p class="muted small">Estimativas para um homem ativo de ~22 anos. Ajusta conforme a balança: se não subires de peso em 3 semanas, junta +150 kcal.</p>
+      <p class="muted small">Estimativas para uma pessoa ativa. Muda o objetivo na tua conta (Progresso › A tua conta). Ajusta conforme a balança, a cada 3 semanas.</p>
     </section>
     ${voiceCard()}
     <div class="tips">
@@ -1741,7 +1759,8 @@ function sparkline(W) {
 function calc() {
   const kg = parseFloat(($('#ckg') || {}).value); const out = $('#cout'); if (!out) return;
   if (!kg || kg < 35 || kg > 200) { out.innerHTML = '<p class="muted">Escreve o teu peso entre 35 e 200 kg.</p>'; return; }
-  const prot = [Math.round(kg * 1.6), Math.round(kg * 2.2)], kc = Math.round(kg * 33 / 50) * 50 + 300, water = (kg * .035).toFixed(1).replace('.', ',');
+  const adj = { massa: 300, definir: -350, manter: 0 }[S.aim || 'massa'];
+  const prot = [Math.round(kg * 1.6), Math.round(kg * 2.2)], kc = Math.round(kg * 33 / 50) * 50 + adj, water = (kg * .035).toFixed(1).replace('.', ',');
   out.innerHTML = `<div><small>Proteína / dia</small><b>${prot[0]}–${prot[1]} g</b></div><div><small>Calorias / dia</small><b>~${kc.toLocaleString('pt-PT')}</b></div><div><small>Água / dia</small><b>${water} L</b></div>`;
 }
 
@@ -2087,6 +2106,7 @@ document.addEventListener('click', ev => {
   if (d.cat !== undefined) { filterCat = d.cat; libTab = 'treinos'; return go('treinos'); }
   if (d.filter) { filterCat = d.filter; return render(true); }
   if (d.tab) { libTab = d.tab; return render(true); }
+  if (d.aim) { PL_AIM = d.aim; document.querySelectorAll('.pf-goal button').forEach(b => { const on = b.dataset.aim === d.aim; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); return; }
   if (d.level) { S.level = d.level; save(); return $('#sheet').hidden ? render() : $('#sheet')._redraw(); }
   if ('close' in d) return closeSheet();
   if (d.vpick !== undefined || d.vprev !== undefined) {
@@ -2131,8 +2151,14 @@ document.addEventListener('submit', ev => {
   ev.preventDefault();
   if (ev.target.id === 'name-f') {
     const v = $('#name-in').value.trim().split(/\s+/)[0] || '';
-    S.name = v ? v.charAt(0).toUpperCase() + v.slice(1) : ''; save(); render();
-    const m = $('#name-msg'); if (m) { m.innerHTML = S.name ? `Guardado. Olá, <b>${esc(S.name)}</b>!` : 'Nome removido.'; m.classList.add('ok'); }
+    S.name = v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
+    const kg = parseFloat(($('#pf-kg').value || '').replace(',', '.')), cm = parseInt($('#pf-cm').value, 10);
+    const last = S.weights.length ? S.weights[S.weights.length - 1].kg : null;
+    if (kg >= 30 && kg <= 200 && Math.round(kg * 10) / 10 !== last) { const k = today(); S.weights = S.weights.filter(w => w.d !== k); S.weights.push({ d: k, kg: Math.round(kg * 10) / 10 }); }
+    S.height = cm >= 120 && cm <= 230 ? cm : (S.height || null);
+    S.aim = PL_AIM || S.aim || 'massa';
+    save(); render();
+    const m = $('#name-msg'); if (m) { m.innerHTML = `Perfil guardado${S.name ? `, <b>${esc(S.name)}</b>` : ''}.`; m.classList.add('ok'); }
     return;
   }
   if (ev.target.id === 'wform') { const v = parseFloat($('#wkg').value.replace(',', '.')); if (!v || v < 30 || v > 200) { $('#wkg').focus(); return; }

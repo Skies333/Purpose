@@ -446,6 +446,14 @@ html{-webkit-tap-highlight-color:transparent}
 .profile .pf-h>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pf-name{font-family:var(--display);font-size:24px;font-weight:800}
 #name-msg.ok{color:var(--lime)}
+.pf-form{display:flex;flex-direction:column;gap:12px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>span{font-size:12.5px;font-weight:700;color:var(--muted)}
+.fld input{background:var(--surface2);border:1px solid var(--line);color:var(--ink);font:600 16px var(--body);padding:12px 14px;border-radius:14px;width:100%;box-sizing:border-box}
+.pf-goal button{white-space:nowrap;font-size:13.5px;padding:10px 6px}
+.fld-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.back-link{padding-top:calc(20px + env(safe-area-inset-top));align-self:flex-start}
+.top.acc-top{padding-top:0}
 .acc-link,.name-cta{flex-direction:row;align-items:center;gap:14px;text-align:left}
 .acc-link>div,.name-cta>div{flex:1;display:flex;flex-direction:column;min-width:0}
 .acc-link small,.name-cta small{color:var(--muted);font-size:13px}
