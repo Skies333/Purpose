@@ -3,7 +3,7 @@ const KEY = 'forjaCasa.v1';
 let S = { history: [], weights: [], goal: 5, level: 'av', sound: true, voice: true, mode: 'casa', loads: {}, best: {}, prs: 0, warm: true, cool: true, totals: { reps: {}, sec: {} }, unlocked: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
 S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa';
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function save() { S._t = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudQueue === 'function') cloudQueue(); }
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -249,7 +249,7 @@ const VIEWS = {
     const done = S.history.some(h => h.d === today());
     const wk = weekDays(), set = new Set(S.history.map(h => h.d)), nWeek = wk.filter(x => set.has(dkey(x))).length;
     return `
-    <div class="brandbar">${logo('loop')}<div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div>
+    <div class="brandbar">${logo('loop')}<div class="bb-r">${cloudBadge()}<div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div></div>
     <header class="top home"><div><h1>${hi}!</h1><p class="muted">Treina com propósito. Hoje é ${DAYS[d.getDay()].toLowerCase()}.</p></div></header>
     ${modeSwitch()}
 
@@ -340,6 +340,7 @@ const VIEWS = {
     const W = S.weights.slice(-20);
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
+    ${cloudCard()}
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
@@ -711,7 +712,7 @@ function finish() {
   countDone();
   for (const k in PL.done.reps) S.totals.reps[k] = (S.totals.reps[k] || 0) + PL.done.reps[k];
   for (const k in PL.done.sec) S.totals.sec[k] = (S.totals.sec[k] || 0) + PL.done.sec[k];
-  S.history.push({ d: today(), w: PL.w.id, min, kcal, lvl: PL.L.label, lv: PL.L.id, h: new Date().getHours() });
+  S.history.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), d: today(), w: PL.w.id, min, kcal, lvl: PL.L.label, lv: PL.L.id, h: new Date().getHours() });
   const fresh = achievements().filter(a => a.done && !S.unlocked.includes(a.id));
   fresh.forEach(a => S.unlocked.push(a.id)); save();
   beep(1046, .15); setTimeout(() => beep(1318, .3), 160); say(pick(['Treino terminado! Mandaste muito bem.', 'Acabou! Excelente trabalho hoje.', 'Parabéns, treino feito! Cada dia conta.']) + (fresh.length ? ` E desbloqueaste ${fresh.length > 1 ? fresh.length + ' medalhas novas' : 'a medalha ' + fresh[0].name}!` : ''));

@@ -417,6 +417,22 @@ html{-webkit-tap-highlight-color:transparent}
 #splash{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;transition:opacity .45s ease,transform .45s ease}
 #splash .logo{font-size:clamp(56px,16vw,96px);animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
 #splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
+/* conta / nuvem */
+.bb-r{display:flex;align-items:center;gap:8px}
+.cl-badge{height:40px;padding:0 14px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--lime);display:inline-flex;align-items:center}
+.cl-badge.on{width:40px;padding:0;justify-content:center}
+.cl-badge .ic{width:20px;height:20px}
+.cloud .cl-h{display:flex;align-items:flex-start;gap:12px}
+.cloud .cl-h>.ic{width:26px;height:26px;color:var(--lime);flex:none;margin-top:1px}
+.cloud .cl-h>div{flex:1;display:flex;flex-direction:column;gap:3px}
+.cloud.on{border-color:rgba(214,245,61,.35);background:linear-gradient(135deg,#1c2212,var(--surface))}
+.cl-dot{width:10px;height:10px;border-radius:50%;background:var(--lime);flex:none;margin-top:8px}
+.cl-dot.sync{animation:fadeIn .6s ease infinite alternate}
+.cl-dot.error{background:var(--danger)} .cl-dot.offline{background:var(--muted)}
+.cl-st{font-size:13.5px;color:var(--muted)}
+.cl-code{letter-spacing:.4em;font-variant-numeric:tabular-nums;text-align:center}
+.cl-msg{font-size:13.5px;color:var(--danger)}
+.cloud .inline input{min-width:0}
 /* ===== Animações ===== */
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
@@ -523,6 +539,7 @@ html{-webkit-tap-highlight-color:transparent}
 /*ENGINE*/
 /*DATA*/
 /*GYM*/
+/*CLOUD*/
 /*APP*/
 document.getElementById('fab').addEventListener('click', () => startWorkout(myPlan()[new Date().getDay()].w));
 </script>

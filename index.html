@@ -417,6 +417,22 @@ html{-webkit-tap-highlight-color:transparent}
 #splash{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;transition:opacity .45s ease,transform .45s ease}
 #splash .logo{font-size:clamp(56px,16vw,96px);animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
 #splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
+/* conta / nuvem */
+.bb-r{display:flex;align-items:center;gap:8px}
+.cl-badge{height:40px;padding:0 14px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--lime);display:inline-flex;align-items:center}
+.cl-badge.on{width:40px;padding:0;justify-content:center}
+.cl-badge .ic{width:20px;height:20px}
+.cloud .cl-h{display:flex;align-items:flex-start;gap:12px}
+.cloud .cl-h>.ic{width:26px;height:26px;color:var(--lime);flex:none;margin-top:1px}
+.cloud .cl-h>div{flex:1;display:flex;flex-direction:column;gap:3px}
+.cloud.on{border-color:rgba(214,245,61,.35);background:linear-gradient(135deg,#1c2212,var(--surface))}
+.cl-dot{width:10px;height:10px;border-radius:50%;background:var(--lime);flex:none;margin-top:8px}
+.cl-dot.sync{animation:fadeIn .6s ease infinite alternate}
+.cl-dot.error{background:var(--danger)} .cl-dot.offline{background:var(--muted)}
+.cl-st{font-size:13.5px;color:var(--muted)}
+.cl-code{letter-spacing:.4em;font-variant-numeric:tabular-nums;text-align:center}
+.cl-msg{font-size:13.5px;color:var(--danger)}
+.cloud .inline input{min-width:0}
 /* ===== Animações ===== */
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
@@ -1054,12 +1070,166 @@ Object.assign(EX, {
 EX.dblunge = { ...EX.lunges, place: 'gym', name: 'Afundos com halteres', hold: 'db', muscles: 'Quadríceps, glúteos',
   cues: ['Um halter em cada mão, braços ao lado', 'Passo largo, joelho de trás quase ao chão', 'Tronco direito'], easier: 'Sem halteres', harder: 'Afundo búlgaro com halteres' };
 
+/* ===== Conta e sincronização (Supabase) ===== */
+const SB_URL = 'https://dkhqjvdilarcmbjxohia.supabase.co';
+// Chave pública (anon): pode estar no site. As regras de segurança da base de dados protegem os dados de cada pessoa.
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraHFqdmRpbGFyY21ianhvaGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwMzQwNzEsImV4cCI6MjExMDYxMDA3MX0.zjS4m7KUIMXnFuDXaRPmDMHGHq4820Ii4QMXBuIVgDI';
+const SB_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+const LOCAL_ONLY = ['voiceName', 'sound', 'voice'];
+
+const CL = { sb: null, user: null, status: 'idle', step: 'email', email: '', msg: '', lastSync: null, timer: null, busy: false, unavailable: false };
+
+function loadLib() {
+  return new Promise((res, rej) => {
+    if (window.supabase && window.supabase.createClient) return res();
+    const s = document.createElement('script'); s.src = SB_LIB; s.async = true;
+    s.onload = () => res(); s.onerror = () => rej(new Error('lib')); document.head.appendChild(s);
+  });
+}
+async function cloudInit() {
+  // dentro do Claude o site não pode falar com o Supabase: a conta só funciona no site próprio
+  if (/claude|anthropic/i.test(location.hostname) || location.protocol === 'file:') { CL.unavailable = true; refreshCloudUI(); return; }
+  try {
+    await loadLib();
+    CL.sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'purpose-auth' } });
+    const { data } = await CL.sb.auth.getSession();
+    CL.user = data.session ? data.session.user : null;
+    CL.sb.auth.onAuthStateChange((_e, session) => { const was = CL.user && CL.user.id; CL.user = session ? session.user : null; if (CL.user && CL.user.id !== was) pullMerge(); refreshCloudUI(); });
+    if (CL.user) await pullMerge();
+    refreshCloudUI();
+  } catch (e) { CL.unavailable = true; refreshCloudUI(); }
+}
+window.addEventListener('online', () => { if (CL.user && S._dirty) pushNow(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && CL.user && S._dirty) pushNow(); });
+
+/* junta o progresso de dois aparelhos sem perder nada */
+function hKey(h) { return h.id || [h.d, h.w, h.min, h.h ?? '', h.lv || h.lvl || ''].join('|'); }
+function mergeStates(a, b) {
+  const newer = (a._t || 0) >= (b._t || 0) ? a : b, older = newer === a ? b : a;
+  const out = Object.assign({}, older, newer);
+  const hist = new Map(); [...(older.history || []), ...(newer.history || [])].forEach(h => hist.set(hKey(h), h));
+  out.history = [...hist.values()].sort((x, y) => (x.d + (x.h ?? 0)).localeCompare(y.d + (y.h ?? 0)));
+  const w = new Map(); [...(older.weights || []), ...(newer.weights || [])].forEach(x => w.set(x.d, x));
+  out.weights = [...w.values()].sort((x, y) => x.d.localeCompare(y.d));
+  out.unlocked = [...new Set([...(a.unlocked || []), ...(b.unlocked || [])])];
+  out.loads = Object.assign({}, older.loads || {}, newer.loads || {});
+  out.best = {}; for (const s of [a.best || {}, b.best || {}]) for (const k in s) out.best[k] = Math.max(out.best[k] || 0, s[k]);
+  out.prs = Math.max(a.prs || 0, b.prs || 0);
+  const mx = (p, q) => { const r = Object.assign({}, p); for (const k in q) r[k] = Math.max(r[k] || 0, q[k]); return r; };
+  out.totals = { reps: mx((a.totals || {}).reps || {}, (b.totals || {}).reps || {}), sec: mx((a.totals || {}).sec || {}, (b.totals || {}).sec || {}) };
+  return out;
+}
+function cloudPayload() { const o = Object.assign({}, S); LOCAL_ONLY.forEach(k => delete o[k]); delete o._dirty; return o; }
+
+async function pullMerge() {
+  if (!CL.sb || !CL.user || CL.busy) return; CL.busy = true; CL.status = 'sync'; refreshCloudUI();
+  try {
+    const { data, error } = await CL.sb.from('user_state').select('state, updated_at').eq('user_id', CL.user.id).maybeSingle();
+    if (error) throw error;
+    if (data && data.state) {
+      const keep = {}; LOCAL_ONLY.forEach(k => { if (k in S) keep[k] = S[k]; });
+      const merged = mergeStates(data.state, S);
+      Object.keys(S).forEach(k => delete S[k]); Object.assign(S, merged, keep);
+      S.totals = S.totals || { reps: {}, sec: {} }; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {};
+      try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    }
+    CL.busy = false; await pushNow(true);
+    if ($('#main') && $('#player').hidden) render();
+  } catch (e) { CL.status = 'error'; CL.busy = false; refreshCloudUI(); }
+}
+function cloudQueue() {
+  S._dirty = true;
+  if (!CL.user) return;
+  clearTimeout(CL.timer); CL.timer = setTimeout(pushNow, 1500);
+}
+async function pushNow(force) {
+  if (!CL.sb || !CL.user || (CL.busy && !force)) return;
+  if (!navigator.onLine) { CL.status = 'offline'; refreshCloudUI(); return; }
+  CL.busy = true; CL.status = 'sync'; refreshCloudUI();
+  try {
+    const { error } = await CL.sb.from('user_state').upsert({ user_id: CL.user.id, state: cloudPayload(), updated_at: new Date().toISOString() });
+    if (error) throw error;
+    S._dirty = false; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    CL.status = 'ok'; CL.lastSync = new Date();
+  } catch (e) { CL.status = 'error'; }
+  CL.busy = false; refreshCloudUI();
+}
+
+/* login com código por email */
+async function sendCode(email) {
+  CL.msg = ''; CL.email = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(CL.email)) { CL.msg = 'Escreve um email válido.'; return refreshCloudUI(); }
+  CL.status = 'sending'; refreshCloudUI();
+  const { error } = await CL.sb.auth.signInWithOtp({ email: CL.email, options: { shouldCreateUser: true } });
+  CL.status = 'idle';
+  if (error) {
+    CL.msg = /rate|seconds/i.test(error.message) ? 'Pediste um código há pouco. Espera um minuto e tenta outra vez.'
+      : /not authorized|not_authorized/i.test(error.message + (error.code || '')) ? 'Este email ainda não pode receber códigos. O dono da app tem de ativar o envio de emails.'
+      : 'Não foi possível enviar o código. Tenta outra vez.';
+  } else { CL.step = 'code'; CL.msg = ''; }
+  refreshCloudUI();
+  if (CL.step === 'code') setTimeout(() => { const i = $('#cl-code'); if (i) i.focus(); }, 50);
+}
+async function verifyCode(code) {
+  if (CL.status === 'sending') return;
+  CL.msg = ''; code = code.replace(/\D/g, '');
+  if (code.length < 6) { CL.msg = 'O código tem 6 dígitos.'; return refreshCloudUI(); }
+  CL.status = 'sending'; refreshCloudUI();
+  const { data, error } = await CL.sb.auth.verifyOtp({ email: CL.email, token: code, type: 'email' });
+  CL.status = 'idle';
+  if (error) { CL.msg = 'Código errado ou expirado. Confirma o email ou pede um novo.'; return refreshCloudUI(); }
+  CL.user = data.user; CL.step = 'email'; await pullMerge();
+}
+async function signOut() { try { await CL.sb.auth.signOut(); } catch (e) {} CL.user = null; CL.status = 'idle'; refreshCloudUI(); }
+
+/* interface */
+function cloudCard() {
+  const icCloud = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1-.5 8.5z"/></svg>';
+  if (CL.unavailable) return `<section class="card cloud" id="cloud"><div class="cl-h">${icCloud}<h3>Conta</h3></div><p class="muted small">A conta só funciona no site <b>skies333.github.io/purpose</b>. Aqui o progresso fica só neste navegador.</p></section>`;
+  if (!CL.sb) return `<section class="card cloud" id="cloud"><div class="cl-h">${icCloud}<h3>Conta</h3></div><p class="muted small">A ligar…</p></section>`;
+  if (CL.user) {
+    const st = { sync: 'A sincronizar…', ok: CL.lastSync ? 'Guardado às ' + CL.lastSync.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : 'Guardado na nuvem', error: 'Não foi possível sincronizar', offline: 'Sem internet: guarda quando voltar a ligação', idle: 'Guardado na nuvem' }[CL.status] || '';
+    return `<section class="card cloud on" id="cloud"><div class="cl-h">${icCloud}<div><h3>Progresso na nuvem</h3><p class="muted small">${esc(CL.user.email || '')}</p></div><span class="cl-dot ${CL.status}"></span></div>
+      <p class="cl-st">${st}</p>
+      <div class="row-btns"><button class="btn ghost sm" data-clsync>Sincronizar agora</button><button class="btn ghost sm" data-clout>Terminar sessão</button></div></section>`;
+  }
+  const sending = CL.status === 'sending';
+  return `<section class="card cloud" id="cloud"><div class="cl-h">${icCloud}<div><h3>Guarda o teu progresso</h3><p class="muted small">Entra com o email para não perderes o histórico, as medalhas e as cargas, e para os teres em qualquer aparelho.</p></div></div>
+    ${CL.step === 'email'
+      ? `<form class="inline" id="cl-email-f"><label for="cl-email" class="sr">Email</label><input id="cl-email" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" value="${esc(CL.email)}"><button class="btn lime sm" type="submit" ${sending ? 'disabled' : ''}>${sending ? 'A enviar…' : 'Enviar código'}</button></form>`
+      : `<p class="small">Enviámos um código de 6 dígitos para <b>${esc(CL.email)}</b>.</p>
+         <form class="inline" id="cl-code-f"><label for="cl-code" class="sr">Código</label><input id="cl-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" class="cl-code"><button class="btn lime sm" type="submit" ${sending ? 'disabled' : ''}>${sending ? 'A entrar…' : 'Entrar'}</button></form>
+         <button class="link" data-clback>Usar outro email</button>`}
+    ${CL.msg ? `<p class="cl-msg">${esc(CL.msg)}</p>` : ''}</section>`;
+}
+function refreshCloudUI() {
+  const c = document.getElementById('cloud'); if (c) { const f = document.activeElement && document.activeElement.id; const v = f && document.getElementById(f) ? document.getElementById(f).value : null; c.outerHTML = cloudCard(); if (f && document.getElementById(f)) { const n = document.getElementById(f); if (v !== null) n.value = v; n.focus(); } }
+  const b = document.getElementById('cl-badge'); if (b) b.outerHTML = cloudBadge();
+}
+function cloudBadge() {
+  if (CL.unavailable || !CL.sb) return '<span id="cl-badge"></span>';
+  if (CL.user) return `<button id="cl-badge" class="cl-badge on" data-go="progresso" aria-label="Progresso guardado na nuvem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1-.5 8.5z"/><path d="M9.5 13.5l2 2 3.5-3.5"/></svg></button>`;
+  return `<button id="cl-badge" class="cl-badge" data-go="progresso">Guardar progresso</button>`;
+}
+document.addEventListener('submit', ev => {
+  if (ev.target.id === 'cl-email-f') { ev.preventDefault(); sendCode($('#cl-email').value); }
+  if (ev.target.id === 'cl-code-f') { ev.preventDefault(); verifyCode($('#cl-code').value); }
+});
+document.addEventListener('input', ev => { if (ev.target.id === 'cl-code' && ev.target.value.replace(/\D/g, '').length === 6) verifyCode(ev.target.value); });
+document.addEventListener('click', ev => {
+  const t = ev.target.closest('[data-clsync],[data-clout],[data-clback]'); if (!t) return;
+  if ('clsync' in t.dataset) pullMerge();
+  if ('clout' in t.dataset) signOut();
+  if ('clback' in t.dataset) { CL.step = 'email'; CL.msg = ''; refreshCloudUI(); }
+});
+setTimeout(cloudInit, 0);
+
 /* ===== Estado ===== */
 const KEY = 'forjaCasa.v1';
 let S = { history: [], weights: [], goal: 5, level: 'av', sound: true, voice: true, mode: 'casa', loads: {}, best: {}, prs: 0, warm: true, cool: true, totals: { reps: {}, sec: {} }, unlocked: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
 S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa';
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function save() { S._t = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudQueue === 'function') cloudQueue(); }
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -1305,7 +1475,7 @@ const VIEWS = {
     const done = S.history.some(h => h.d === today());
     const wk = weekDays(), set = new Set(S.history.map(h => h.d)), nWeek = wk.filter(x => set.has(dkey(x))).length;
     return `
-    <div class="brandbar">${logo('loop')}<div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div>
+    <div class="brandbar">${logo('loop')}<div class="bb-r">${cloudBadge()}<div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div></div>
     <header class="top home"><div><h1>${hi}!</h1><p class="muted">Treina com propósito. Hoje é ${DAYS[d.getDay()].toLowerCase()}.</p></div></header>
     ${modeSwitch()}
 
@@ -1396,6 +1566,7 @@ const VIEWS = {
     const W = S.weights.slice(-20);
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
+    ${cloudCard()}
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
@@ -1767,7 +1938,7 @@ function finish() {
   countDone();
   for (const k in PL.done.reps) S.totals.reps[k] = (S.totals.reps[k] || 0) + PL.done.reps[k];
   for (const k in PL.done.sec) S.totals.sec[k] = (S.totals.sec[k] || 0) + PL.done.sec[k];
-  S.history.push({ d: today(), w: PL.w.id, min, kcal, lvl: PL.L.label, lv: PL.L.id, h: new Date().getHours() });
+  S.history.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), d: today(), w: PL.w.id, min, kcal, lvl: PL.L.label, lv: PL.L.id, h: new Date().getHours() });
   const fresh = achievements().filter(a => a.done && !S.unlocked.includes(a.id));
   fresh.forEach(a => S.unlocked.push(a.id)); save();
   beep(1046, .15); setTimeout(() => beep(1318, .3), 160); say(pick(['Treino terminado! Mandaste muito bem.', 'Acabou! Excelente trabalho hoje.', 'Parabéns, treino feito! Cada dia conta.']) + (fresh.length ? ` E desbloqueaste ${fresh.length > 1 ? fresh.length + ' medalhas novas' : 'a medalha ' + fresh[0].name}!` : ''));
