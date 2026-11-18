@@ -457,7 +457,7 @@ html{-webkit-tap-highlight-color:transparent}
 @keyframes glow{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
 @keyframes flame{0%,100%{transform:rotate(-4deg) scale(1)}50%{transform:rotate(4deg) scale(1.12)}}
 @keyframes tick{from{transform:scale(1.12);opacity:.6}to{transform:none;opacity:1}}
-@keyframes shine{0%,70%{transform:translateX(-120%) rotate(20deg)}100%{transform:translateX(220%) rotate(20deg)}}
+@keyframes shine{0%,55%{background-position:150% 0}100%{background-position:-50% 0}}
 @keyframes draw{from{stroke-dashoffset:30}to{stroke-dashoffset:0}}
 @keyframes boxPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.06);opacity:1}100%{transform:none}}
 @keyframes shimmerTxt{from{background-position:0 0}to{background-position:200% 0}}
@@ -489,8 +489,7 @@ html{-webkit-tap-highlight-color:transparent}
 .round-btn:hover{transform:scale(1.08);box-shadow:0 6px 18px rgba(214,245,61,.3)}
 .ach.on:hover,.stat:hover{transform:translateY(-2px)}
 .seg button,.chip{transition:background .25s,color .25s}
-.medal.on{overflow:hidden}
-.medal.on::after{content:"";position:absolute;top:-10%;left:0;width:30%;height:120%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:shine 3.5s ease-in-out infinite;clip-path:polygon(50% 5%,95% 28%,95% 72%,50% 95%,5% 72%,5% 28%)}
+.medal.on::after{content:"";position:absolute;inset:0;pointer-events:none;clip-path:polygon(50% 4.7%,89.1% 27.3%,89.1% 72.7%,50% 95.3%,10.9% 72.7%,10.9% 27.3%);background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%) no-repeat;background-size:300% 100%;background-position:150% 0;animation:shine 3.6s ease-in-out infinite}
 .ach:nth-child(3n+2) .medal.on::after{animation-delay:.6s}.ach:nth-child(3n) .medal.on::after{animation-delay:1.2s}
 .sheet-open{animation:slideIn .35s cubic-bezier(.2,.8,.2,1)}
 .sheet-open .hero-fig{animation:popScale .5s .1s cubic-bezier(.2,.8,.2,1) both}
