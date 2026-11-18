@@ -353,7 +353,7 @@ const VIEWS = {
     const W = S.weights.slice(-20);
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
-    <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>Nome, peso, objetivo e sincronização</small></div>${ic('next', 'chev')}</button>
+    <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>Nome, peso, histórico e sincronização</small></div>${ic('next', 'chev')}</button>
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
@@ -366,21 +366,14 @@ const VIEWS = {
     <section class="card"><div class="sec-h in"><h3>Últimas 10 semanas</h3><span class="muted small">cada coluna = 1 semana</span></div>
       <div class="heat">${cells}</div></section>
     <section class="card goal"><div><h3>Objetivo semanal</h3><p class="muted small">Para ganhar massa: 4–6 treinos por semana.</p></div>
-      <div class="stepper"><button data-goal="-1" aria-label="Menos">−</button><b>${S.goal}</b><button data-goal="1" aria-label="Mais">+</button></div></section>
-    <section class="card"><h3>Histórico</h3>
-      ${H.length ? `<div class="hist">${H.slice().reverse().slice(0, 30).map(h => { const w = WMAP[h.w]; const dd = new Date(h.d + 'T12:00');
-        return `<div class="hrow"><div><b>${esc(w ? w.name : h.w)}</b><small>${dd.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })} · ${esc(h.lvl || '')}</small></div><span>${h.min} min</span></div>`; }).join('')}</div>
-        <button class="link danger" id="clear">${ic('trash')} Apagar histórico</button>`
-      : `<p class="empty">Ainda não há treinos. O primeiro fica guardado aqui assim que o terminares.</p>`}
-    </section>`;
+      <div class="stepper"><button data-goal="-1" aria-label="Menos">−</button><b>${S.goal}</b><button data-goal="1" aria-label="Mais">+</button></div></section>`;
   },
 
   conta() {
     PL_AIM = null;
-    const tg = (id, on, t, s) => `<label class="tg"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span class="sw"></span><div><b>${t}</b><small>${s}</small></div></label>`;
     return `
     <button class="link back-link" data-go="progresso">${ic('back')} Progresso</button>
-    <header class="top acc-top"><div><h1>Conta</h1><p class="muted">O teu perfil, a sincronização e as definições da app.</p></div></header>
+    <header class="top acc-top"><div><h1>Conta</h1><p class="muted">O teu perfil, a sincronização e o histórico de treinos.</p></div></header>
     <section class="card profile">
       <div class="pf-h">${avatar(72)}<div><b class="pf-name">${S.name ? esc(S.name) : 'O teu perfil'}</b><small class="muted">${accountLine()}</small></div></div>
       <form class="pf-form" id="name-f">
@@ -396,24 +389,12 @@ const VIEWS = {
       </form>
     </section>
     ${cloudCard()}
-    <div class="sec-h"><h3>Treino</h3></div>
-    ${modeSwitch()}
-    <section class="card">
-      <h3>Nível por defeito</h3>
-      <div class="seg lv">${LEVELS.map(l => `<button class="${l.id === S.level ? 'on' : ''}" data-level="${l.id}">${l.label}</button>`).join('')}</div>
-      <div class="goal"><div><b>Objetivo semanal</b><p class="muted small">Treinos por semana</p></div>
-      <div class="stepper"><button data-goal="-1" aria-label="Menos">−</button><b>${S.goal}</b><button data-goal="1" aria-label="Mais">+</button></div></div>
+    <section class="card"><div class="sec-h in"><h3>Histórico</h3><span class="muted small">${S.history.length} treino${S.history.length === 1 ? '' : 's'}</span></div>
+      ${S.history.length ? `<div class="hist">${S.history.slice().reverse().slice(0, 30).map(h => { const w = WMAP[h.w]; const dd = new Date(h.d + 'T12:00');
+        return `<div class="hrow"><div><b>${esc(w ? w.name : h.w)}</b><small>${dd.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })} · ${esc(h.lvl || '')}</small></div><span>${h.min} min</span></div>`; }).join('')}</div>
+        <button class="link danger" id="clear">${ic('trash')} Apagar histórico</button>`
+      : `<p class="empty">Ainda não há treinos. O primeiro fica guardado aqui assim que o terminares.</p>`}
     </section>
-    <div class="toggles">
-      ${tg('tg-warm', S.warm, 'Aquecimento automático', '2 min antes de cada treino')}
-      ${tg('tg-cool', S.cool, 'Alongamento final', '2 min no fim de cada treino')}
-    </div>
-    <div class="sec-h"><h3>Som e voz</h3></div>
-    <div class="toggles">
-      ${tg('tg-sound', S.sound, 'Sons', 'Contagem 3-2-1 e som de fim de exercício')}
-      ${tg('tg-voice', S.voice, 'Voz do treinador', 'Anuncia exercícios, descansos e recordes')}
-    </div>
-    ${voiceCard()}
     <p class="muted small center">purpose · treino em casa e no ginásio</p>`;
   },
 
