@@ -273,7 +273,7 @@ const VIEWS = {
         <h2>${esc(w.name)}</h2>
         <div class="chips"><span>${ic('clock')} ${p.min} min</span><span>${ic('fire')} ~${p.kcal} kcal</span><span>${ic('layers')} ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</span></div>
         ${done ? `<p class="done-note">${ic('check')} Já treinaste hoje. Boa!</p>` : ''}
-        <div class="row-btns"><button class="btn lime" data-start="${w.id}">${ic('play')} Começar</button><button class="btn ghost" data-open="${w.id}">Ver detalhes</button></div>
+        <div class="row-btns"><button class="btn lime" data-start="${w.id}">${ic('play')} Começar</button><button class="btn ghost" data-open="${w.id}">Detalhes ${ic('next')}</button></div>
       </div>
     </section>
 
