@@ -303,7 +303,8 @@ const VIEWS = {
     const exIds = Object.keys(EX).filter(k => isGym() ? EX[k].place === 'gym' : !EX[k].place);
     const groups = [...new Set(exIds.map(k => EX[k].group))];
     return `
-    <header class="top ex-top"><div><h1>Explorar</h1><p class="muted">${isGym() ? 'Barras, halteres e máquinas' : 'Zero equipamento, só o teu corpo'}</p></div>${modeSwitch(true)}</header>
+    <header class="top"><div><h1>Explorar</h1><p class="muted">${isGym() ? 'Barras, halteres e máquinas' : 'Zero equipamento, só o teu corpo'}</p></div></header>
+    ${modeSwitch()}
     <div class="ex-tools">
       <div class="utabs" role="tablist">
         <button role="tab" aria-selected="${libTab === 'treinos'}" class="${libTab === 'treinos' ? 'on' : ''}" data-tab="treinos">Treinos <i>${myWorkouts().length}</i></button>
