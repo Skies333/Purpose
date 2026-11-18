@@ -504,6 +504,20 @@ html{-webkit-tap-highlight-color:transparent}
 .chipwrap .chip.on i{opacity:.75}
 .chipwrap .chip:last-child{margin-right:24px}
 @media (max-width:380px){.mode.compact button{padding:8px 9px}}
+/* medalhas: expandir */
+.mbar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.mbar i{display:block;height:100%;background:var(--lime);border-radius:3px}
+.ach-more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s cubic-bezier(.3,.8,.2,1)}
+.ach-more-in{overflow:hidden;min-height:0}
+.ach-more .ach-grid{padding-top:8px}
+.medals.open .ach-more{grid-template-rows:1fr}
+.ach-more .ach{opacity:0;transform:translateY(10px);transition:opacity .35s,transform .35s}
+.medals.open .ach-more .ach{opacity:1;transform:none}
+.medals.open .ach-more .ach:nth-child(n){transition-delay:calc(.03s * var(--k,0))}
+.mtoggle{min-height:46px;gap:10px;font-size:14px}
+.mtoggle .mchev{width:18px;height:18px;transition:transform .35s}
+.medals.open .mtoggle .mchev{transform:rotate(180deg)}
+.mt-n{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--lime);color:var(--lime-ink)}
 /* ===== Animações ===== */
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}

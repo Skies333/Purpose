@@ -104,7 +104,7 @@ function weekDays() { // segunda a domingo da semana atual
 
 /* ===== Router ===== */
 const ROUTES = ['inicio', 'treinos', 'plano', 'progresso', 'dicas', 'conta'];
-let route = 'inicio', filterCat = 'Todos', libTab = 'treinos';
+let route = 'inicio', filterCat = 'Todos', libTab = 'treinos', medalsOpen = false;
 function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(true); }
 window.addEventListener('hashchange', () => render(true));
 
@@ -366,9 +366,13 @@ const VIEWS = {
       <div class="stat"><small>Sequência</small><b><span data-count="${streak()}">${streak()}</span><i> dias</i></b></div>
       <div class="stat"><small>kcal (est.)</small><b data-count="${kc}">${kc.toLocaleString('pt-PT')}</b></div>
     </div>
-    ${(() => { const A = achievements(), got = A.filter(x => x.done).length;
-      return `<section class="card"><div class="sec-h in"><h3>Medalhas</h3><span class="muted small">${got} de ${A.length}</span></div>
-        <div class="ach-grid">${A.map(x => `<div class="ach ${x.done ? 'on' : ''}">${medal(x)}<b>${esc(x.name)}</b><small>${esc(x.desc)}</small>${x.done ? '<span class="ok">Conquistada</span>' : `<div class="mini-bar"><i style="width:${x.cur / x.goal * 100}%"></i></div><span class="pc">${x.cur}/${x.goal}</span>`}</div>`).join('')}</div></section>`; })()}
+    ${(() => { const A = achievements().sort((x, y) => (y.done - x.done) || (y.cur / y.goal - x.cur / x.goal)), got = A.filter(x => x.done).length, N = 6;
+      const cell = (x, i) => `<div class="ach ${x.done ? 'on' : ''}"${i >= N ? ` style="--k:${i - N}"` : ''}>${medal(x)}<b>${esc(x.name)}</b><small>${esc(x.desc)}</small>${x.done ? '<span class="ok">Conquistada</span>' : `<div class="mini-bar"><i style="width:${x.cur / x.goal * 100}%"></i></div><span class="pc">${x.cur}/${x.goal}</span>`}</div>`;
+      return `<section class="card medals ${medalsOpen ? 'open' : ''}"><div class="sec-h in"><h3>Medalhas</h3><span class="muted small">${got} de ${A.length}</span></div>
+        <div class="mbar"><i style="width:${got / A.length * 100}%"></i></div>
+        <div class="ach-grid">${A.slice(0, N).map(cell).join('')}</div>
+        <div class="ach-more" aria-hidden="${!medalsOpen}"><div class="ach-more-in"><div class="ach-grid">${A.slice(N).map((x, i) => cell(x, i + N)).join('')}</div></div></div>
+        <button class="btn ghost full mtoggle" data-medals aria-expanded="${medalsOpen}">${medalsOpen ? 'Mostrar menos' : `Ver todas as medalhas <span class="mt-n">+${A.length - N}</span>`}<svg class="ic mchev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></section>`; })()}
     <section class="card"><div class="sec-h in"><h3>Últimas 10 semanas</h3><span class="muted small">cada coluna = 1 semana</span></div>
       <div class="heat">${cells}</div></section>
     <section class="card goal"><div><h3>Objetivo semanal</h3><p class="muted small">Para ganhar massa: 4–6 treinos por semana.</p></div>
@@ -792,6 +796,14 @@ document.addEventListener('click', ev => {
   if (d.cat !== undefined) { filterCat = d.cat; libTab = 'treinos'; return go('treinos'); }
   if (d.filter) { filterCat = d.filter; return render(true); }
   if (d.tab) { libTab = d.tab; return render(true); }
+  if ('medals' in d) {
+    medalsOpen = !medalsOpen; const sec = t.closest('.medals'); sec.classList.toggle('open', medalsOpen);
+    t.setAttribute('aria-expanded', medalsOpen); sec.querySelector('.ach-more').setAttribute('aria-hidden', !medalsOpen);
+    const n = sec.querySelectorAll('.ach-more .ach').length;
+    t.innerHTML = (medalsOpen ? 'Mostrar menos' : `Ver todas as medalhas <span class="mt-n">+${n}</span>`) + '<svg class="ic mchev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    if (!medalsOpen) sec.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' });
+    return;
+  }
   if (d.aim) { PL_AIM = d.aim; document.querySelectorAll('.pf-goal button').forEach(b => { const on = b.dataset.aim === d.aim; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); return; }
   if (d.level) { S.level = d.level; save(); return $('#sheet').hidden ? render() : $('#sheet')._redraw(); }
   if ('close' in d) return closeSheet();
