@@ -55,8 +55,8 @@ const ZONE_FIG_GYM = { 'Corpo inteiro': 'bbsquat', 'Parte de cima': 'barrow', 'P
 const hasLoad = id => EX[id].place === 'gym' && !BODYWEIGHT.includes(id);
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
-function modeSwitch() {
-  return `<div class="mode" role="tablist" aria-label="Onde vais treinar">
+function modeSwitch(compact) {
+  return `<div class="mode ${compact ? 'compact' : ''}" role="tablist" aria-label="Onde vais treinar">
     <span class="mode-ind ${isGym() ? 'r' : ''}"></span>
     <button role="tab" aria-selected="${!isGym()}" class="${isGym() ? '' : 'on'}" data-mode="casa">${ic('house')} Em casa</button>
     <button role="tab" aria-selected="${isGym()}" class="${isGym() ? 'on' : ''}" data-mode="gym">${ic('dumb')} Ginásio</button></div>`;
@@ -303,11 +303,16 @@ const VIEWS = {
     const exIds = Object.keys(EX).filter(k => isGym() ? EX[k].place === 'gym' : !EX[k].place);
     const groups = [...new Set(exIds.map(k => EX[k].group))];
     return `
-    <header class="top"><div><h1>Explorar</h1><p class="muted">${myWorkouts().length} treinos · ${exIds.length} exercícios${isGym() ? ' com barras, halteres e máquinas' : ', zero equipamento'}</p></div></header>
-    ${modeSwitch()}
-    <div class="seg"><button class="${libTab === 'treinos' ? 'on' : ''}" data-tab="treinos">Treinos</button><button class="${libTab === 'ex' ? 'on' : ''}" data-tab="ex">Exercícios</button></div>
+    <header class="top ex-top"><div><h1>Explorar</h1><p class="muted">${isGym() ? 'Barras, halteres e máquinas' : 'Zero equipamento, só o teu corpo'}</p></div>${modeSwitch(true)}</header>
+    <div class="ex-tools">
+      <div class="utabs" role="tablist">
+        <button role="tab" aria-selected="${libTab === 'treinos'}" class="${libTab === 'treinos' ? 'on' : ''}" data-tab="treinos">Treinos <i>${myWorkouts().length}</i></button>
+        <button role="tab" aria-selected="${libTab === 'ex'}" class="${libTab === 'ex' ? 'on' : ''}" data-tab="ex">Exercícios <i>${exIds.length}</i></button>
+      </div>
+      ${libTab === 'treinos' ? `<div class="chipwrap"><div class="chipbar">${myCats().map(c => { const n = c === 'Todos' ? myWorkouts().length : myWorkouts().filter(w => w.cat === c).length;
+        return `<button class="chip ${c === filterCat ? 'on' : ''}" data-filter="${c}">${esc(c)}<i>${n}</i></button>`; }).join('')}</div></div>` : ''}
+    </div>
     ${libTab === 'treinos' ? `
-      <div class="chipbar">${myCats().map(c => `<button class="chip ${c === filterCat ? 'on' : ''}" data-filter="${c}">${esc(c)}</button>`).join('')}</div>
       <div class="grid">${list.map((w, i) => wCard(w, i)).join('')}</div>`
     : groups.map(g => `<div class="sec-h"><h3>${esc(g)}</h3></div><div class="list">${exIds.filter(k => EX[k].group === g).map((k, i) => exRow(k, null, i)).join('')}</div>`).join('')}`;
   },
