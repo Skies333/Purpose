@@ -134,9 +134,13 @@ async function googleSignIn() {
 async function signOut() {
   if (S._dirty) await pushNow(true);
   try { await CL.sb.auth.signOut(); } catch (e) {}
-  CL.user = null; CL.status = 'idle'; CL.step = 'email';
+  CL.user = null; CL.status = 'idle'; CL.step = 'email'; CL.showEmail = false; CL.lastSync = null;
+  // limpa os dados da conta neste aparelho (ficam guardados na nuvem); mantém só as preferências do aparelho
+  const keep = {}; LOCAL_ONLY.forEach(k => { if (k in S) keep[k] = S[k]; });
+  Object.keys(S).forEach(k => delete S[k]); Object.assign(S, DEF_S(), keep);
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
   const r = await CL.sb.auth.signInAnonymously(); if (!r.error) CL.user = r.data.user;
-  refreshCloudUI();
+  render(true);
 }
 
 /* interface */
@@ -169,11 +173,11 @@ function cloudCard() {
 function refreshCloudUI() {
   const c = document.getElementById('cloud'); if (c) { const f = document.activeElement && document.activeElement.id; const v = f && document.getElementById(f) ? document.getElementById(f).value : null; c.outerHTML = cloudCard(); if (f && document.getElementById(f)) { const n = document.getElementById(f); if (v !== null) n.value = v; n.focus(); } }
   const b = document.getElementById('cl-badge'); if (b) b.outerHTML = cloudBadge();
+  document.querySelectorAll('.pf-h .avatar, .acc-link .avatar').forEach(n => { n.classList.toggle('linked', !!(CL.user && !CL.user.is_anonymous)); });
+  document.querySelectorAll('.pf-h small, .acc-link small').forEach(n => { n.textContent = accountLine(); });
 }
 function cloudBadge() {
-  if (CL.unavailable || !CL.sb) return '<span id="cl-badge"></span>';
-  if (CL.user && !isAnon()) return `<button id="cl-badge" class="cl-badge on" data-go="progresso" aria-label="Progresso guardado na nuvem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1-.5 8.5z"/><path d="M9.5 13.5l2 2 3.5-3.5"/></svg></button>`;
-  return `<button id="cl-badge" class="cl-badge" data-go="progresso">Guardar progresso</button>`;
+  return `<button id="cl-badge" class="av-btn" data-go="conta" aria-label="Conta${S.name ? ' de ' + esc(S.name) : ''}">${avatar(40)}</button>`;
 }
 document.addEventListener('submit', ev => {
   if (ev.target.id === 'cl-email-f') { ev.preventDefault(); sendCode($('#cl-email').value); }
@@ -185,7 +189,7 @@ document.addEventListener('click', ev => {
   if ('clgoogle' in t.dataset) googleLink();
   if ('clemail' in t.dataset) { CL.showEmail = true; refreshCloudUI(); setTimeout(() => { const i = $('#cl-email'); if (i) i.focus(); }, 30); }
   if ('clsync' in t.dataset) pullMerge();
-  if ('clout' in t.dataset) signOut();
+  if ('clout' in t.dataset) confirmBox({ title: 'Terminar sessão?', text: `O teu progresso fica guardado na conta${CL.user && CL.user.email ? ' ' + CL.user.email : ''}. Neste aparelho a app recomeça do zero até voltares a entrar.`, yes: 'Terminar sessão', no: 'Cancelar', icon: 'x', danger: true, onYes: signOut });
   if ('clback' in t.dataset) { CL.step = 'email'; CL.msg = ''; refreshCloudUI(); }
 });
 setTimeout(cloudInit, 0);

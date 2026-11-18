@@ -1,6 +1,7 @@
 /* ===== Estado ===== */
 const KEY = 'forjaCasa.v1';
-let S = { history: [], weights: [], goal: 5, level: 'av', sound: true, voice: true, mode: 'casa', loads: {}, best: {}, prs: 0, warm: true, cool: true, totals: { reps: {}, sec: {} }, unlocked: [] };
+const DEF_S = () => ({ name: '', history: [], weights: [], goal: 5, level: 'av', sound: true, voice: true, mode: 'casa', loads: {}, best: {}, prs: 0, warm: true, cool: true, totals: { reps: {}, sec: {} }, unlocked: [] });
+let S = DEF_S();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
 S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa';
 function save() { S._t = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudQueue === 'function') cloudQueue(); }
@@ -102,7 +103,7 @@ function weekDays() { // segunda a domingo da semana atual
 }
 
 /* ===== Router ===== */
-const ROUTES = ['inicio', 'treinos', 'plano', 'progresso', 'dicas'];
+const ROUTES = ['inicio', 'treinos', 'plano', 'progresso', 'dicas', 'conta'];
 let route = 'inicio', filterCat = 'Todos', libTab = 'treinos';
 function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(true); }
 window.addEventListener('hashchange', () => render(true));
@@ -194,6 +195,17 @@ function ring(v, max, size = 84) {
 }
 
 const ZONE_FIG = { 'Corpo inteiro': 'burpee', 'Parte de cima': 'pushup', 'Pernas': 'squat', 'Core': 'climbers', 'HIIT': 'jacks', 'Mobilidade': 'dog' };
+/* ===== Conta: avatar e estado ===== */
+function avatar(sz) {
+  const ini = (S.name || '').trim().charAt(0).toUpperCase();
+  const linked = typeof CL !== 'undefined' && CL.user && !CL.user.is_anonymous;
+  return `<span class="avatar ${linked ? 'linked' : ''}" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz * .44)}px" aria-hidden="true">${ini || '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'}</span>`;
+}
+function accountLine() {
+  if (typeof CL === 'undefined' || CL.unavailable) return 'Progresso guardado neste aparelho';
+  if (CL.user && !CL.user.is_anonymous) return 'Ligada a ' + (CL.user.email || 'conta');
+  return 'Ainda não ligada: o progresso só está neste aparelho';
+}
 /* ===== Medalhas & conquistas ===== */
 function maxStreak() {
   const ds = [...new Set(S.history.map(h => h.d))].sort(); let best = 0, cur = 0, prev = null;
@@ -250,7 +262,8 @@ const VIEWS = {
     const wk = weekDays(), set = new Set(S.history.map(h => h.d)), nWeek = wk.filter(x => set.has(dkey(x))).length;
     return `
     <div class="brandbar">${logo('loop')}<div class="bb-r">${cloudBadge()}<div class="streak ${streak() ? 'hot' : ''}" title="Dias seguidos a treinar">${ic('fire')}<b data-count="${streak()}">${streak()}</b></div></div></div>
-    <header class="top home"><div><h1>${hi}!</h1><p class="muted">Treina com propósito. Hoje é ${DAYS[d.getDay()].toLowerCase()}.</p></div></header>
+    ${S.name ? '' : `<button class="card name-cta" data-go="conta">${avatar(40)}<div><b>Como te chamas?</b><small>Põe o teu nome e guarda o progresso na tua conta.</small></div>${ic('next', 'chev')}</button>`}
+    <header class="top home"><div><h1>${hi}${S.name ? ', ' + esc(S.name) : ''}!</h1><p class="muted">Treina com propósito. Hoje é ${DAYS[d.getDay()].toLowerCase()}.</p></div></header>
     ${modeSwitch()}
 
     <section class="today">
@@ -340,7 +353,7 @@ const VIEWS = {
     const W = S.weights.slice(-20);
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
-    ${cloudCard()}
+    <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>${accountLine()}</small></div>${ic('next', 'chev')}</button>
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
@@ -365,6 +378,37 @@ const VIEWS = {
         <button class="link danger" id="clear">${ic('trash')} Apagar histórico</button>`
       : `<p class="empty">Ainda não há treinos. O primeiro fica guardado aqui assim que o terminares.</p>`}
     </section>`;
+  },
+
+  conta() {
+    const tg = (id, on, t, s) => `<label class="tg"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span class="sw"></span><div><b>${t}</b><small>${s}</small></div></label>`;
+    return `
+    <header class="top"><div><h1>Conta</h1><p class="muted">O teu perfil, a sincronização e as definições da app.</p></div></header>
+    <section class="card profile">
+      <div class="pf-h">${avatar(72)}<div><b class="pf-name">${S.name ? esc(S.name) : 'Sem nome'}</b><small class="muted">${accountLine()}</small></div></div>
+      <form class="inline" id="name-f"><label for="name-in" class="sr">Primeiro nome</label><input id="name-in" type="text" maxlength="20" autocomplete="given-name" placeholder="O teu primeiro nome" value="${esc(S.name || '')}"><button class="btn lime sm" type="submit">Guardar</button></form>
+      <p class="muted small" id="name-msg">Aparece na saudação do Início.</p>
+    </section>
+    ${cloudCard()}
+    <div class="sec-h"><h3>Treino</h3></div>
+    ${modeSwitch()}
+    <section class="card">
+      <h3>Nível por defeito</h3>
+      <div class="seg lv">${LEVELS.map(l => `<button class="${l.id === S.level ? 'on' : ''}" data-level="${l.id}">${l.label}</button>`).join('')}</div>
+      <div class="goal"><div><b>Objetivo semanal</b><p class="muted small">Treinos por semana</p></div>
+      <div class="stepper"><button data-goal="-1" aria-label="Menos">−</button><b>${S.goal}</b><button data-goal="1" aria-label="Mais">+</button></div></div>
+    </section>
+    <div class="toggles">
+      ${tg('tg-warm', S.warm, 'Aquecimento automático', '2 min antes de cada treino')}
+      ${tg('tg-cool', S.cool, 'Alongamento final', '2 min no fim de cada treino')}
+    </div>
+    <div class="sec-h"><h3>Som e voz</h3></div>
+    <div class="toggles">
+      ${tg('tg-sound', S.sound, 'Sons', 'Contagem 3-2-1 e som de fim de exercício')}
+      ${tg('tg-voice', S.voice, 'Voz do treinador', 'Anuncia exercícios, descansos e recordes')}
+    </div>
+    ${voiceCard()}
+    <p class="muted small center">purpose · treino em casa e no ginásio</p>`;
   },
 
   dicas() {
@@ -754,7 +798,7 @@ document.addEventListener('click', ev => {
   if (d.cat !== undefined) { filterCat = d.cat; libTab = 'treinos'; return go('treinos'); }
   if (d.filter) { filterCat = d.filter; return render(true); }
   if (d.tab) { libTab = d.tab; return render(true); }
-  if (d.level) { S.level = d.level; save(); return $('#sheet')._redraw(); }
+  if (d.level) { S.level = d.level; save(); return $('#sheet').hidden ? render() : $('#sheet')._redraw(); }
   if ('close' in d) return closeSheet();
   if (d.vpick !== undefined || d.vprev !== undefined) {
     const name = d.vpick ?? d.vprev, prevSel = S.voiceName;
@@ -796,11 +840,18 @@ document.addEventListener('click', ev => {
 });
 document.addEventListener('submit', ev => {
   ev.preventDefault();
+  if (ev.target.id === 'name-f') {
+    const v = $('#name-in').value.trim().split(/\s+/)[0] || '';
+    S.name = v ? v.charAt(0).toUpperCase() + v.slice(1) : ''; save(); render();
+    const m = $('#name-msg'); if (m) { m.innerHTML = S.name ? `Guardado. Olá, <b>${esc(S.name)}</b>!` : 'Nome removido.'; m.classList.add('ok'); }
+    return;
+  }
   if (ev.target.id === 'wform') { const v = parseFloat($('#wkg').value.replace(',', '.')); if (!v || v < 30 || v > 200) { $('#wkg').focus(); return; }
     const k = today(); S.weights = S.weights.filter(w => w.d !== k); S.weights.push({ d: k, kg: Math.round(v * 10) / 10 }); save(); render(); }
 });
 document.addEventListener('change', ev => {
-  if (ev.target.id === 'tg-warm' || ev.target.id === 'tg-cool') { S[ev.target.id === 'tg-warm' ? 'warm' : 'cool'] = ev.target.checked; save(); const sh = $('#sheet'), y = sh.scrollTop; sh._redraw(); sh.scrollTop = y; return; }
+  const TG = { 'tg-warm': 'warm', 'tg-cool': 'cool', 'tg-sound': 'sound', 'tg-voice': 'voice' };
+  if (TG[ev.target.id]) { S[TG[ev.target.id]] = ev.target.checked; save(); const sh = $('#sheet'); if (!sh.hidden && sh._redraw) { const y = sh.scrollTop; sh._redraw(); sh.scrollTop = y; } return; }
 });
 document.addEventListener('input', ev => { if (ev.target.id === 'ckg') calc(); });
 document.addEventListener('keydown', ev => {
