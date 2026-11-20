@@ -546,6 +546,21 @@ body.lock::after{display:none}
 .settings{gap:12px;align-items:stretch}
 .settings .sec-h{margin-top:4px}
 .settings .voice-card{background:var(--surface2)}
+/* lembretes */
+.remind{gap:12px}
+.remind.on{border-color:rgba(214,245,61,.35)}
+.remind .tg.plain{background:none;border:0;padding:0}
+.rm-h{display:flex;gap:12px;align-items:flex-start}
+.rm-h .ic{color:var(--lime);width:22px;height:22px;flex:none;margin-top:2px}
+.rm-h div{display:flex;flex-direction:column;gap:3px}
+.rm-h small{color:var(--muted);font-size:13px;line-height:1.45}
+.rm-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 14px}
+.rm-row label{font-weight:600;font-size:14px}
+.rm-row input{background:var(--bg);border:1px solid var(--line);color:var(--ink);font:700 18px var(--body);padding:8px 12px;border-radius:10px;color-scheme:dark;font-variant-numeric:tabular-nums}
+.rm-row.dis{opacity:.45}
+.rm-msg{font-size:13px;color:var(--muted);min-height:1em}
+.rm-msg.ok{color:var(--lime)} .rm-msg.err{color:var(--danger)}
+.remind .btn{align-self:flex-start}
 /* editar plano */
 .edit-plan{min-height:38px;padding:6px 14px;font-size:13.5px}
 .edit-plan .ic{width:16px;height:16px}

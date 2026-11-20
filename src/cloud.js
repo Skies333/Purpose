@@ -3,7 +3,7 @@ const SB_URL = 'https://dkhqjvdilarcmbjxohia.supabase.co';
 // Chave pública (anon): pode estar no site. As regras de segurança da base de dados protegem os dados de cada pessoa.
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraHFqdmRpbGFyY21ianhvaGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwMzQwNzEsImV4cCI6MjExMDYxMDA3MX0.zjS4m7KUIMXnFuDXaRPmDMHGHq4820Ii4QMXBuIVgDI';
 const SB_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
-const LOCAL_ONLY = ['voiceName', 'sound', 'voice'];
+const LOCAL_ONLY = ['voiceName', 'sound', 'voice', 'remind'];
 
 const CL = { sb: null, user: null, status: 'idle', step: 'email', email: '', msg: '', lastSync: null, timer: null, busy: false, unavailable: false };
 
@@ -32,7 +32,7 @@ async function cloudInit() {
     if (location.search.includes('code=')) history.replaceState(null, '', location.pathname + location.hash);
     // sem sessão: cria uma conta anónima para o progresso já ficar guardado na nuvem
     if (!CL.user) { const r = await CL.sb.auth.signInAnonymously(); if (!r.error) CL.user = r.data.user; }
-    CL.sb.auth.onAuthStateChange((_e, session) => { const was = CL.user && CL.user.id; CL.user = session ? session.user : null; if (CL.user && CL.user.id !== was) pullMerge(); refreshCloudUI(); });
+    CL.sb.auth.onAuthStateChange((_e, session) => { const was = CL.user && CL.user.id; CL.user = session ? session.user : null; if (CL.user && CL.user.id !== was) { pullMerge(); pushQueue(); } refreshCloudUI(); });
     if (CL.user) await pullMerge();
     refreshCloudUI();
   } catch (e) { CL.unavailable = true; refreshCloudUI(); }
@@ -204,3 +204,63 @@ document.addEventListener('click', ev => {
   if ('clback' in t.dataset) { CL.step = 'email'; CL.msg = ''; refreshCloudUI(); }
 });
 setTimeout(cloudInit, 0);
+
+/* ===== Lembretes por notificação ===== */
+const PUSH_FN = SB_URL + '/functions/v1/lembretes';
+const VAPID_PUBLIC = 'BB58-ySWDm5JqtSqd9hkwkFrBOzbTsAlpSfHwvnL_hHJE-DdwDEdyrxKktsg-_RiXcg5JBjN8-8vOdVH7bAO6mo';
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function pushStatus() {
+  if (CL.unavailable) return 'site';
+  if (isIOS() && !isStandalone()) return 'install';
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
+  if (Notification.permission === 'denied') return 'denied';
+  return 'ok';
+}
+function b64ToBytes(s) { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, ch => ch.charCodeAt(0)); }
+function planMap() {
+  const mp = myPlan(), o = {};
+  for (let d = 0; d < 7; d++) { const w = mp[d] && mp[d].w ? WMAP[mp[d].w] : null; o[d] = w ? w.name : null; }
+  return o;
+}
+async function getSub(create) {
+  const reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub && create) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID_PUBLIC) });
+  return sub;
+}
+async function savePushRow(sub) {
+  if (!CL.sb || !CL.user || !sub) return false;
+  const j = sub.toJSON(), r = S.remind || {};
+  const { error } = await CL.sb.from('push_subs').upsert({
+    endpoint: j.endpoint, user_id: CL.user.id, p256dh: j.keys.p256dh, auth: j.keys.auth,
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Lisbon', remind_time: r.time || '18:00',
+    plan: planMap(), enabled: true, updated_at: new Date().toISOString()
+  }, { onConflict: 'endpoint,user_id' });
+  return !error;
+}
+async function enablePush() {
+  const st = pushStatus(); if (st !== 'ok') return st;
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') return 'denied';
+  try { const sub = await getSub(true); return (await savePushRow(sub)) ? 'on' : 'error'; } catch (e) { return 'error'; }
+}
+async function disablePush() {
+  try {
+    const sub = await getSub(false);
+    if (sub) { if (CL.sb && CL.user) await CL.sb.from('push_subs').delete().eq('endpoint', sub.endpoint).eq('user_id', CL.user.id); await sub.unsubscribe(); }
+  } catch (e) {}
+}
+let pushTimer = null;
+function pushQueue() {
+  if (!S.remind || !S.remind.on || pushStatus() !== 'ok') return;
+  clearTimeout(pushTimer); pushTimer = setTimeout(async () => { try { await savePushRow(await getSub(false)); } catch (e) {} }, 1200);
+}
+async function testPush() {
+  try {
+    const sub = await getSub(false); if (!sub) return false;
+    await savePushRow(sub);
+    const { error } = await CL.sb.functions.invoke('lembretes', { body: { test: true, endpoint: sub.endpoint } });
+    return !error;
+  } catch (e) { return false; }
+}

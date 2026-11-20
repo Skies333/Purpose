@@ -13,6 +13,7 @@ function save() {
   FIELDS.forEach(k => { if (SNAP[k] !== undefined && JSON.stringify(S[k] ?? null) !== SNAP[k]) S._f[k] = now; });
   snapFields();
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudQueue === 'function') cloudQueue();
+  if (typeof pushQueue === 'function') pushQueue();
 }
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -52,6 +53,7 @@ const IC = {
   dumb: '<path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/>',
   house: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   grip: '<circle cx="9" cy="6" r="1.4" fill="currentColor"/><circle cx="15" cy="6" r="1.4" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="currentColor"/><circle cx="15" cy="12" r="1.4" fill="currentColor"/><circle cx="9" cy="18" r="1.4" fill="currentColor"/><circle cx="15" cy="18" r="1.4" fill="currentColor"/>',
   up: '<path d="M6 15l6-6 6 6"/>',
@@ -218,12 +220,31 @@ function ring(v, max, size = 84) {
 
 const ZONE_FIG = { 'Corpo inteiro': 'burpee', 'Parte de cima': 'pushup', 'Pernas': 'squat', 'Core': 'climbers', 'HIIT': 'jacks', 'Mobilidade': 'dog' };
 /* ===== Definições ===== */
+function remindBlock() {
+  const r = S.remind || { on: false, time: '18:00' }, st = typeof pushStatus === 'function' ? pushStatus() : 'site';
+  const note = {
+    site: 'Os lembretes funcionam na app em <b>skies333.github.io/purpose</b>.',
+    install: 'No iPhone, primeiro adiciona a purpose ao ecrã principal (Safari › Partilhar › Adicionar ao ecrã principal) e abre-a pelo ícone. Depois ativa aqui.',
+    unsupported: 'Este navegador não suporta notificações. Experimenta o Chrome, o Edge ou a app no ecrã principal do iPhone.',
+    denied: 'As notificações estão bloqueadas para a purpose. Ativa-as nas definições do aparelho (no iPhone: Definições › Notificações › purpose) e volta aqui.'
+  }[st];
+  if (note) return `<div class="card remind off"><div class="rm-h">${ic('bell')}<div><b>Lembrete de treino</b><small>${note}</small></div></div></div>`;
+  return `<div class="card remind ${r.on ? 'on' : ''}" id="remind">
+    <label class="tg plain"><input type="checkbox" id="tg-remind" ${r.on ? 'checked' : ''}><span class="sw"></span><div><b>Lembrete de treino</b><small>Nos dias com treino no teu plano, se ainda não treinaste.</small></div></label>
+    <div class="rm-row ${r.on ? '' : 'dis'}"><label for="remind-time">Hora do lembrete</label><input type="time" id="remind-time" value="${r.time || '18:00'}" ${r.on ? '' : 'disabled'}></div>
+    <p class="rm-msg" id="remind-msg">${r.on ? 'Ativo neste aparelho.' : ''}</p>
+    ${r.on ? '<button class="btn ghost sm" data-ptest>Enviar notificação de teste</button>' : ''}
+  </div>`;
+}
+function redrawRemind(msg, ok) { const el = $('#remind'); if (!el) return; el.outerHTML = remindBlock(); const m = $('#remind-msg'); if (m && msg) { m.textContent = msg; m.className = 'rm-msg ' + (ok ? 'ok' : 'err'); } }
 function openSettings() {
   const tg = (id, on, t, s) => `<label class="tg"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span class="sw"></span><div><b>${t}</b><small>${s}</small></div></label>`;
   const m = $('#modal');
   m.innerHTML = `<div class="modal-in settings" role="dialog" aria-modal="true" aria-labelledby="st-t">
     <button class="icon-btn mclose" data-mclose aria-label="Fechar">${ic('x')}</button>
     <h2 id="st-t">Definições</h2>
+    <div class="sec-h"><h3>Lembretes</h3></div>
+    ${remindBlock()}
     <div class="sec-h"><h3>Som e voz</h3></div>
     <div class="toggles">
       ${tg('tg-sound', S.sound, 'Sons', 'Contagem 3-2-1 e som de fim de exercício')}
@@ -911,6 +932,7 @@ document.addEventListener('click', ev => {
   }
   if (d.delbest) { const id = d.delbest; return confirmBox({ title: 'Apagar a carga guardada?', text: `A última carga e o recorde de ${EX[id].name} voltam a ficar vazios. Útil se ficou registado um valor errado.`, yes: 'Apagar', no: 'Cancelar', icon: 'trash', danger: true, onYes: () => { delete S.loads[id]; delete S.best[id]; save(); closeEx(); render(); } }); }
   if ('settings' in d) return openSettings();
+  if ('ptest' in d) { const m = $('#remind-msg'); if (m) { m.textContent = 'A enviar…'; m.className = 'rm-msg'; } testPush().then(ok => { const mm = $('#remind-msg'); if (mm) { mm.textContent = ok ? 'Enviada. Deve aparecer daqui a uns segundos.' : 'Não foi possível enviar o teste.'; mm.className = 'rm-msg ' + (ok ? 'ok' : 'err'); } }); return; }
   if ('planedit' in d) return startPlanEdit();
   if ('pcancel' in d) { planEdit = false; PDRAFT = null; return render(true); }
   if ('psave' in d) { S.plans = Object.assign({}, S.plans || {}); const o = {}; PLAN_ORDER.forEach((day, i) => o[day] = { w: PDRAFT[i].w, extra: PDRAFT[i].extra }); S.plans[S.mode] = o; save(); planEdit = false; PDRAFT = null; render(true); return; }
@@ -976,6 +998,17 @@ document.addEventListener('submit', ev => {
   }
 });
 document.addEventListener('change', ev => {
+  if (ev.target.id === 'tg-remind') {
+    const on = ev.target.checked; S.remind = Object.assign({ time: '18:00' }, S.remind || {});
+    if (!on) { S.remind.on = false; save(); disablePush(); return redrawRemind('Lembretes desligados.', true); }
+    const m = $('#remind-msg'); if (m) m.textContent = 'A ativar…';
+    enablePush().then(res => {
+      if (res === 'on') { S.remind.on = true; save(); redrawRemind(`Feito. Vais receber um lembrete às ${S.remind.time} nos dias de treino.`, true); }
+      else { S.remind.on = false; save(); redrawRemind(res === 'denied' ? 'Não deste permissão para notificações. Ativa-as nas definições do aparelho.' : 'Não foi possível ativar. Tenta outra vez com internet.', false); }
+    });
+    return;
+  }
+  if (ev.target.id === 'remind-time') { S.remind = Object.assign({}, S.remind || {}, { time: ev.target.value || '18:00' }); save(); const m = $('#remind-msg'); if (m) { m.textContent = `Lembrete às ${S.remind.time}.`; m.className = 'rm-msg ok'; } return; }
   const TG = { 'tg-warm': 'warm', 'tg-cool': 'cool', 'tg-sound': 'sound', 'tg-voice': 'voice' };
   if (TG[ev.target.id]) { S[TG[ev.target.id]] = ev.target.checked; save(); const sh = $('#sheet'); if (!sh.hidden && sh._redraw) { const y = sh.scrollTop; sh._redraw(); sh.scrollTop = y; } return; }
 });
