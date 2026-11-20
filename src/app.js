@@ -150,6 +150,23 @@ function render(anim) {
   if (route === 'dicas') calc();
   setupSegs();
 }
+/* trocar casa/ginásio, separadores e filtros sem a página inteira voltar a entrar:
+   o que está acima do menu fica parado, só o conteúdo de baixo aparece suavemente */
+function softRender(sel) {
+  const main = $('#main'), sx = (main.querySelector('.chipbar') || {}).scrollLeft || 0;
+  render(false);
+  const cb = main.querySelector('.chipbar'); if (cb && sel === '.chipbar') cb.scrollLeft = sx;
+  if (RM) return;
+  const anchor = main.querySelector(sel); if (!anchor) return;
+  let host = anchor; while (host.parentElement && host.parentElement !== main) host = host.parentElement;
+  let after = false, k = 0;
+  [...main.children].forEach(c => {
+    if (c === host) { after = true; return; }
+    if (!after) return;
+    c.style.setProperty('--k', Math.min(k++, 6)); c.classList.remove('swap'); void c.offsetWidth; c.classList.add('swap');
+  });
+  const tools = host.querySelector('.chipwrap'); if (tools && sel !== '.chipbar') { tools.classList.remove('swap'); void tools.offsetWidth; tools.classList.add('swap'); }
+}
 /* ===== Logo purpose (o “o” é um anel de progresso) ===== */
 function logo(mode = '') {
   return `<span class="logo ${mode}" role="img" aria-label="purpose"><span aria-hidden="true">purp</span><span class="logo-o" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="lo-t" cx="50" cy="50" r="39"></circle><circle class="lo-a" cx="50" cy="50" r="39" pathLength="100" transform="rotate(-90 50 50)"></circle></svg></span><span aria-hidden="true">se</span></span>`;
@@ -997,14 +1014,14 @@ document.addEventListener('click', ev => {
   const t = ev.target.closest('button, [data-ex]'); if (!t) { if (ev.target.id === 'modal') closeEx(); return; }
   const d = t.dataset;
   if (d.go) return go(d.go);
-  if (d.mode) { if (S.mode !== d.mode) { S.mode = d.mode; planEdit = false; PDRAFT = null; save(); render(true); } return; }
+  if (d.mode) { if (S.mode !== d.mode) { S.mode = d.mode; planEdit = false; PDRAFT = null; save(); softRender('.mode'); } return; }
   if (d.open) return openWorkout(d.open);
   if (d.start) return startWorkout(d.start);
   if (d.ex) return openEx(d.ex);
   if (d.exinfo) { if (PL) PL.paused = true; drawPlayer(); return openEx(d.exinfo); }
   if (d.cat !== undefined) { filterCat = d.cat; libTab = 'treinos'; return go('treinos'); }
-  if (d.filter) { filterCat = d.filter; return render(true); }
-  if (d.tab) { libTab = d.tab; return render(true); }
+  if (d.filter) { filterCat = d.filter; return softRender('.chipbar'); }
+  if (d.tab) { libTab = d.tab; return softRender('.utabs'); }
   if ('medals' in d) {
     medalsOpen = !medalsOpen; const sec = t.closest('.medals'); sec.classList.toggle('open', medalsOpen);
     t.setAttribute('aria-expanded', medalsOpen); sec.querySelector('.ach-more').setAttribute('aria-hidden', !medalsOpen);
