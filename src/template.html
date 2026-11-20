@@ -553,6 +553,18 @@ body.lock::after{display:none}
 .settings{gap:12px;align-items:stretch}
 .settings .sec-h{margin-top:4px}
 .settings .voice-card{background:var(--surface2)}
+/* realce deslizante nos menus de opções */
+.sg{position:relative}
+.sg>button{position:relative;z-index:1}
+.sg-ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;background:var(--lime);box-shadow:0 6px 18px rgba(214,245,61,.22);transition:transform .42s cubic-bezier(.3,1.3,.5,1),width .38s cubic-bezier(.3,1.3,.5,1),height .3s,opacity .2s}
+.sg-ind.still{transition:none}
+.sg.mode>button.on,.sg.seg>button.on,.sg.chipbar>.chip.on{background:transparent;border-color:transparent}
+.sg.mode>button,.sg.seg>button{transition:color .3s}
+.sg.chipbar>.chip{background:transparent;transition:color .3s,border-color .3s}
+.utabs.sg .sg-ind{border-radius:3px 3px 0 0;box-shadow:none}
+.utabs.sg>button::after{display:none}
+.sg>button.bounce .ic{animation:bounce .45s ease}
+.mode-ind{display:none}
 /* acordeões */
 .acc-list{display:flex;flex-direction:column;gap:8px}
 .acc{background:var(--surface2);border:1px solid var(--line);border-radius:18px;overflow:hidden}
