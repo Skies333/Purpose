@@ -134,7 +134,15 @@ h3{font-size:17px;font-weight:600}
 .exrow small{color:var(--muted);font-size:13px}
 .exfig{width:84px;height:62px;border-radius:12px;overflow:hidden;background:var(--surface2);flex:none;color:var(--ink)}
 
-.plan-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 12px 12px 16px}
+.plan-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 12px 12px 16px;transition:border-color .2s,background .2s}
+.plan-row:hover{border-color:#4a5236}
+.plan-open{flex:1;display:flex;align-items:center;gap:14px;min-width:0;text-align:left;border-radius:12px}
+.plan-open:hover .pinfo b{color:var(--lime)}
+.pinfo b{transition:color .2s}
+.p-more{font-size:12.5px;font-weight:700;color:var(--lime);margin-top:3px;white-space:nowrap;opacity:.85}
+.plan-extra{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-left:58px;padding:10px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-size:14px;font-weight:600;text-align:left;transition:border-color .2s}
+.plan-extra small{color:var(--muted);font-size:12.5px;font-weight:500;white-space:nowrap}
+.plan-extra:hover{border-color:var(--lime)}
 .plan-row.now{border-color:var(--lime);background:linear-gradient(135deg,#232a12,var(--surface))}
 .pday{width:44px;display:flex;flex-direction:column;align-items:flex-start}
 .pday b{font-family:var(--display);font-size:18px}
@@ -187,7 +195,7 @@ h3{font-size:17px;font-weight:600}
 
 /* navegação */
 .nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(528px,calc(100% - 24px));display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
-  background:rgba(22,25,17,.92);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:26px;padding:8px;z-index:10}
+  background:rgba(22,25,17,.62);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);box-shadow:0 10px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);border:1px solid var(--line);border-radius:26px;padding:8px;z-index:10}
 .nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0;border-radius:16px}
 .nav button.on{color:var(--lime)}
 .nav .fab{width:56px;height:56px;margin:-26px auto 0;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:grid;place-items:center;box-shadow:0 8px 26px rgba(214,245,61,.3),0 0 0 6px var(--bg)}
@@ -523,6 +531,13 @@ html{-webkit-tap-highlight-color:transparent}
 .mtoggle .mchev{width:18px;height:18px;transition:transform .35s}
 .medals.open .mtoggle .mchev{transform:rotate(180deg)}
 .mt-n{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--lime);color:var(--lime-ink)}
+/* zona desfocada por baixo da barra */
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(110px + env(safe-area-inset-bottom));pointer-events:none;z-index:9;
+  background:linear-gradient(to bottom,rgba(12,14,9,0),rgba(12,14,9,.75) 70%);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  -webkit-mask:linear-gradient(to bottom,transparent,#000 55%);mask:linear-gradient(to bottom,transparent,#000 55%)}
+body.lock::after{display:none}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.nav{background:rgba(22,25,17,.95)}}
 /* ===== Animações ===== */
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}

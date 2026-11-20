@@ -336,9 +336,12 @@ const VIEWS = {
     <div class="list plan">${order.map(d => {
       const pd = myPlan()[d], w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null;
       return `<div class="plan-row ${d === td ? 'now' : ''}">
-        <div class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</div>
-        <div class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min${x ? ` + ${esc(x.name)} (${plan(x).min} min)` : ''}</small></div>
+        <button class="plan-open" data-open="${w.id}" aria-label="Ver detalhes de ${esc(w.name)}">
+          <span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span>
+          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small><span class="p-more">Ver detalhes ›</span></span>
+        </button>
         <button class="round-btn" data-start="${w.id}" aria-label="Começar ${esc(w.name)}">${ic('play')}</button>
+        ${x ? `<button class="plan-extra" data-open="${x.id}"><span>+ ${esc(x.name)}</span><small>${plan(x).min} min ›</small></button>` : ''}
       </div>`;
     }).join('')}</div>
     <section class="card">
@@ -427,7 +430,6 @@ const VIEWS = {
       <div class="calc-out" id="cout"></div>
       <p class="muted small">Estimativas para uma pessoa ativa. Muda o objetivo na tua conta (Progresso › A tua conta). Ajusta conforme a balança, a cada 3 semanas.</p>
     </section>
-    ${voiceCard()}
     <div class="tips">
       ${[
         ['Sobrecarga progressiva', 'Todas as semanas tenta fazer um pouco mais: +1–2 reps, descida mais lenta, menos descanso ou uma variante mais difícil. Sem pesos, é isto que faz crescer.'],
