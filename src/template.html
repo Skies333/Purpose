@@ -538,6 +538,45 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(110px 
   -webkit-mask:linear-gradient(to bottom,transparent,#000 55%);mask:linear-gradient(to bottom,transparent,#000 55%)}
 body.lock::after{display:none}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.nav{background:rgba(22,25,17,.95)}}
+/* editar plano */
+.edit-plan{min-height:38px;padding:6px 14px;font-size:13.5px}
+.edit-plan .ic{width:16px;height:16px}
+.plan-custom{margin-top:-8px}
+.plan-row.rest .pinfo b{color:var(--muted)}
+.ghost-rb{background:var(--surface2);color:var(--lime);border:1px solid var(--line)}
+.pe-head{display:flex;justify-content:space-between;align-items:flex-end}
+.pe-head h3{font-size:20px}
+.pe-gi .ic{width:14px;height:14px;vertical-align:-2px;color:var(--lime)}
+.pe-list{display:flex;flex-direction:column;gap:8px}
+.pe-row{display:flex;align-items:center;gap:12px}
+.pe-row .pday{width:40px;flex:none}
+.pe-card{flex:1;min-width:0;display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 6px 6px 4px;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .2s;position:relative;z-index:1}
+.pe-card.rest{background:transparent;border-style:dashed}
+.pe-card.dragging{transition:none;z-index:5;border-color:var(--lime);box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 1px var(--lime)}
+.pe-grip{width:40px;height:52px;display:grid;place-items:center;color:var(--muted);cursor:grab;touch-action:none;border-radius:12px;flex:none}
+.pe-grip:hover{color:var(--lime);background:var(--surface2)}
+.pe-grip:active{cursor:grabbing}
+.pe-grip .ic{width:20px;height:20px}
+.pe-pick{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 4px;text-align:left;border-radius:10px}
+.pe-pick b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pe-pick small{color:var(--muted);font-size:12.5px}
+.pe-change{font-size:12px;font-weight:700;color:var(--lime);opacity:.8}
+.pe-arrows{display:flex;flex-direction:column;gap:2px}
+.pe-arrows button{width:34px;height:26px;display:grid;place-items:center;border-radius:8px;color:var(--muted)}
+.pe-arrows button:hover:not(:disabled){background:var(--surface2);color:var(--ink)}
+.pe-arrows button:disabled{opacity:.25}
+.pe-arrows .ic{width:16px;height:16px}
+.pe-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.pe-reset{align-self:center}
+body.noselect{user-select:none;-webkit-user-select:none}
+.pk-list{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
+.pk{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 6px;border-radius:14px;background:var(--surface2);border:1.5px solid transparent;text-align:left;width:100%}
+.pk.on{border-color:var(--lime)}
+.pk .ic{color:var(--lime);width:20px;height:20px}
+.pk-fig{width:64px;height:46px;border-radius:10px;background:#14170f;overflow:hidden;flex:none;color:var(--ink)}
+.pk-rest{display:grid;place-items:center}.pk-rest .ic{color:var(--muted)}
+.pk-t{flex:1;display:flex;flex-direction:column;min-width:0}
+.pk-t small{color:var(--muted);font-size:12.5px}
 /* ===== Animações ===== */
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
@@ -645,7 +684,7 @@ body.lock::after{display:none}
 /*GYM*/
 /*CLOUD*/
 /*APP*/
-document.getElementById('fab').addEventListener('click', () => startWorkout(myPlan()[new Date().getDay()].w));
+document.getElementById('fab').addEventListener('click', () => startWorkout(planDay(new Date().getDay()).w));
 </script>
 </body>
 </html>

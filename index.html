@@ -538,6 +538,45 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(110px 
   -webkit-mask:linear-gradient(to bottom,transparent,#000 55%);mask:linear-gradient(to bottom,transparent,#000 55%)}
 body.lock::after{display:none}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.nav{background:rgba(22,25,17,.95)}}
+/* editar plano */
+.edit-plan{min-height:38px;padding:6px 14px;font-size:13.5px}
+.edit-plan .ic{width:16px;height:16px}
+.plan-custom{margin-top:-8px}
+.plan-row.rest .pinfo b{color:var(--muted)}
+.ghost-rb{background:var(--surface2);color:var(--lime);border:1px solid var(--line)}
+.pe-head{display:flex;justify-content:space-between;align-items:flex-end}
+.pe-head h3{font-size:20px}
+.pe-gi .ic{width:14px;height:14px;vertical-align:-2px;color:var(--lime)}
+.pe-list{display:flex;flex-direction:column;gap:8px}
+.pe-row{display:flex;align-items:center;gap:12px}
+.pe-row .pday{width:40px;flex:none}
+.pe-card{flex:1;min-width:0;display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 6px 6px 4px;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .2s;position:relative;z-index:1}
+.pe-card.rest{background:transparent;border-style:dashed}
+.pe-card.dragging{transition:none;z-index:5;border-color:var(--lime);box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 1px var(--lime)}
+.pe-grip{width:40px;height:52px;display:grid;place-items:center;color:var(--muted);cursor:grab;touch-action:none;border-radius:12px;flex:none}
+.pe-grip:hover{color:var(--lime);background:var(--surface2)}
+.pe-grip:active{cursor:grabbing}
+.pe-grip .ic{width:20px;height:20px}
+.pe-pick{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 4px;text-align:left;border-radius:10px}
+.pe-pick b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pe-pick small{color:var(--muted);font-size:12.5px}
+.pe-change{font-size:12px;font-weight:700;color:var(--lime);opacity:.8}
+.pe-arrows{display:flex;flex-direction:column;gap:2px}
+.pe-arrows button{width:34px;height:26px;display:grid;place-items:center;border-radius:8px;color:var(--muted)}
+.pe-arrows button:hover:not(:disabled){background:var(--surface2);color:var(--ink)}
+.pe-arrows button:disabled{opacity:.25}
+.pe-arrows .ic{width:16px;height:16px}
+.pe-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:4px}
+.pe-reset{align-self:center}
+body.noselect{user-select:none;-webkit-user-select:none}
+.pk-list{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:6px}
+.pk{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 6px;border-radius:14px;background:var(--surface2);border:1.5px solid transparent;text-align:left;width:100%}
+.pk.on{border-color:var(--lime)}
+.pk .ic{color:var(--lime);width:20px;height:20px}
+.pk-fig{width:64px;height:46px;border-radius:10px;background:#14170f;overflow:hidden;flex:none;color:var(--ink)}
+.pk-rest{display:grid;place-items:center}.pk-rest .ic{color:var(--muted)}
+.pk-t{flex:1;display:flex;flex-direction:column;min-width:0}
+.pk-t small{color:var(--muted);font-size:12.5px}
 /* ===== Animações ===== */
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
@@ -1382,7 +1421,7 @@ document.addEventListener('click', ev => {
 setTimeout(cloudInit, 0);
 
 // campos de perfil/definições: guardamos a hora de cada alteração para a sincronização não apagar o que mudaste
-const FIELDS = ['name', 'height', 'aim', 'goal', 'level', 'mode', 'warm', 'cool'];
+const FIELDS = ['name', 'height', 'aim', 'goal', 'level', 'mode', 'warm', 'cool', 'plans'];
 let SNAP = {};
 function snapFields() { SNAP = {}; FIELDS.forEach(k => SNAP[k] = JSON.stringify(S[k] ?? null)); }
 /* ===== Estado ===== */
@@ -1434,6 +1473,10 @@ const IC = {
   leg: '<path d="M10 3v8l-3 9h4l2-6 2 6h4l-3-9V3z"/>',
   dumb: '<path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/>',
   house: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  grip: '<circle cx="9" cy="6" r="1.4" fill="currentColor"/><circle cx="15" cy="6" r="1.4" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="currentColor"/><circle cx="15" cy="12" r="1.4" fill="currentColor"/><circle cx="9" cy="18" r="1.4" fill="currentColor"/><circle cx="15" cy="18" r="1.4" fill="currentColor"/>',
+  up: '<path d="M6 15l6-6 6 6"/>',
+  down: '<path d="M6 9l6 6 6-6"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
 const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
@@ -1442,7 +1485,15 @@ const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden=
 const isGym = () => S.mode === 'gym';
 const myWorkouts = () => WORKOUTS.filter(w => w.place === S.mode);
 const myCats = () => isGym() ? CATS_GYM : CATS;
-const myPlan = () => isGym() ? PLAN_GYM : PLAN;
+const PLAN_ORDER = [1, 2, 3, 4, 5, 6, 0];
+// plano personalizado (guardado em S.plans[modo]); senão o plano de origem
+const myPlan = () => {
+  const base = isGym() ? PLAN_GYM : PLAN, cust = S.plans && S.plans[S.mode];
+  if (!cust) return base;
+  const out = {}; PLAN_ORDER.forEach(d => { const c = cust[d] || {}; out[d] = { w: c.w && WMAP[c.w] ? c.w : null, extra: c.extra && WMAP[c.extra] ? c.extra : null, focus: c.w && WMAP[c.w] ? WMAP[c.w].cat : 'Descanso' }; });
+  return out;
+};
+const planDay = d => { const pd = myPlan()[d]; return pd.w ? pd : { w: 'mobility', focus: 'Dia de descanso', rest: true }; };
 const ZONE_FIG_GYM = { 'Corpo inteiro': 'bbsquat', 'Parte de cima': 'barrow', 'Peito & Tríceps': 'bench', 'Costas & Bíceps': 'pulldown', 'Ombros & Braços': 'lateralraise', 'Pernas': 'legpress' };
 const hasLoad = id => EX[id].place === 'gym' && !BODYWEIGHT.includes(id);
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
@@ -1498,7 +1549,7 @@ function weekDays() { // segunda a domingo da semana atual
 const ROUTES = ['inicio', 'treinos', 'plano', 'progresso', 'dicas', 'conta'];
 let route = 'inicio', filterCat = 'Todos', libTab = 'treinos', medalsOpen = false;
 function go(r) { if (location.hash !== '#' + r) location.hash = r; else render(true); }
-window.addEventListener('hashchange', () => render(true));
+window.addEventListener('hashchange', () => { planEdit = false; PDRAFT = null; render(true); });
 
 function render(anim) {
   const h = (location.hash || '').slice(1);
@@ -1587,6 +1638,62 @@ function ring(v, max, size = 84) {
 }
 
 const ZONE_FIG = { 'Corpo inteiro': 'burpee', 'Parte de cima': 'pushup', 'Pernas': 'squat', 'Core': 'climbers', 'HIIT': 'jacks', 'Mobilidade': 'dog' };
+/* ===== Editar plano ===== */
+let planEdit = false, PDRAFT = null;
+function startPlanEdit() { const mp = myPlan(); PDRAFT = PLAN_ORDER.map(d => ({ w: mp[d].w || null, extra: mp[d].extra || null })); planEdit = true; render(true); }
+function planEditor() {
+  return `<div class="pe-head"><div><h3>Editar plano</h3><p class="muted small">Arrasta pelo ${'<span class="pe-gi">' + ic('grip') + '</span>'} para mudar o dia. Toca no treino para o trocar.</p></div></div>
+  <div class="pe-list" id="pe-list">${PDRAFT.map((it, i) => { const d = PLAN_ORDER[i], w = it.w ? WMAP[it.w] : null, x = it.extra ? WMAP[it.extra] : null;
+    return `<div class="pe-row" data-i="${i}">
+      <span class="pday"><b>${DAYS[d].slice(0, 3)}</b></span>
+      <div class="pe-card ${w ? '' : 'rest'}">
+        <button class="pe-grip" data-grip="${i}" aria-label="Arrastar ${w ? esc(w.name) : 'descanso'}">${ic('grip')}</button>
+        <button class="pe-pick" data-pick="${i}"><span class="eyebrow">${w ? esc(w.cat) : 'Descanso'}</span><b>${w ? esc(w.name) : 'Dia de descanso'}</b>${x ? `<small>+ ${esc(x.name)}</small>` : ''}<span class="pe-change">Trocar ›</span></button>
+        <span class="pe-arrows"><button data-pmove="${i}:-1" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>${ic('up')}</button><button data-pmove="${i}:1" aria-label="Descer" ${i === 6 ? 'disabled' : ''}>${ic('down')}</button></span>
+      </div></div>`; }).join('')}</div>
+  <div class="pe-actions"><button class="btn ghost" data-pcancel>Cancelar</button><button class="btn lime" data-psave>${ic('check')} Guardar plano</button></div>
+  ${S.plans && S.plans[S.mode] ? '<button class="link danger pe-reset" data-preset>Repor o plano original</button>' : ''}`;
+}
+function planPicker(i) {
+  const cur = PDRAFT[i], m = $('#modal'), list = myWorkouts().concat(isGym() ? [WMAP.mobility] : []);
+  m.innerHTML = `<div class="modal-in" role="dialog" aria-modal="true" aria-label="Escolher treino">
+    <button class="icon-btn mclose" data-mclose aria-label="Fechar">${ic('x')}</button>
+    <h2>${DAYS[PLAN_ORDER[i]]}</h2><p class="muted">Escolhe o treino deste dia.</p>
+    <div class="pk-list">${list.map(w => { const p = plan(w); return `<button class="pk ${cur.w === w.id ? 'on' : ''}" data-pset="${i}:${w.id}"><span class="pk-fig" data-fig="${w.items[0][0]}"></span><span class="pk-t"><b>${esc(w.name)}</b><small>${esc(w.cat)} · ${p.min} min</small></span>${cur.w === w.id ? ic('check') : ''}</button>`; }).join('')}
+      <button class="pk ${!cur.w ? 'on' : ''}" data-pset="${i}:"><span class="pk-fig pk-rest">${ic('moon')}</span><span class="pk-t"><b>Dia de descanso</b><small>Sem treino marcado</small></span>${!cur.w ? ic('check') : ''}</button>
+    </div>
+    ${cur.extra ? `<button class="link danger" data-pnoextra="${i}">Tirar o treino extra (${esc(WMAP[cur.extra].name)})</button>` : ''}
+  </div>`;
+  m.hidden = false; m.querySelectorAll('[data-fig]').forEach(n => makeFigure(n, n.dataset.fig, { still: true, frame: 0 }));
+}
+function movePlan(from, to) {
+  if (to < 0 || to > 6 || from === to) return;
+  const it = PDRAFT.splice(from, 1)[0]; PDRAFT.splice(to, 0, it);
+}
+function redrawEditor() { const l = $('#main'); const y = window.scrollY; l.innerHTML = VIEWS.plano(); l.querySelectorAll('[data-fig]').forEach(n => makeFigure(n, n.dataset.fig)); window.scrollTo(0, y); }
+// arrastar com o dedo ou o rato
+document.addEventListener('pointerdown', ev => {
+  const g = ev.target.closest('[data-grip]'); if (!g || !planEdit) return;
+  ev.preventDefault();
+  const rows = [...document.querySelectorAll('.pe-row')], from = +g.dataset.grip, row = rows[from], card = row.querySelector('.pe-card');
+  const rects = rows.map(r => r.getBoundingClientRect()), step = rects.length > 1 ? rects[1].top - rects[0].top : rects[0].height;
+  const y0 = ev.clientY; let to = from;
+  card.classList.add('dragging'); document.body.classList.add('noselect');
+  try { g.setPointerCapture(ev.pointerId); } catch (e) {}
+  const move = e => {
+    const dy = e.clientY - y0; card.style.transform = `translateY(${dy}px) scale(1.02)`;
+    to = Math.max(0, Math.min(6, Math.round(from + dy / step)));
+    rows.forEach((r, i) => { if (i === from) return; const c = r.querySelector('.pe-card'); let s = 0;
+      if (from < to && i > from && i <= to) s = -step; if (from > to && i < from && i >= to) s = step;
+      c.style.transform = s ? `translateY(${s}px)` : ''; });
+  };
+  const up = () => {
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    document.body.classList.remove('noselect'); movePlan(from, to); redrawEditor();
+    try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+});
 /* ===== Conta: avatar e estado ===== */
 let PL_AIM = null;
 function avatar(sz) {
@@ -1650,7 +1757,7 @@ const VIEWS = {
   inicio() {
     const d = new Date(), hr = d.getHours();
     const hi = hr < 6 ? 'Boa noite' : hr < 13 ? 'Bom dia' : hr < 20 ? 'Boa tarde' : 'Boa noite';
-    const pd = myPlan()[d.getDay()], w = WMAP[pd.w], p = plan(w);
+    const pd = planDay(d.getDay()), w = WMAP[pd.w], p = plan(w);
     const done = S.history.some(h => h.d === today());
     const wk = weekDays(), set = new Set(S.history.map(h => h.d)), nWeek = wk.filter(x => set.has(dkey(x))).length;
     return `
@@ -1716,8 +1823,12 @@ const VIEWS = {
     return `
     <header class="top"><div><h1>Plano semanal</h1><p class="muted">${isGym() ? 'Push, pull, pernas, parte de cima e corpo inteiro: cada músculo 2× por semana, com descanso ativo pelo meio.' : 'Divisão para ganhar massa e definir: cada músculo 2× por semana, com 1 dia de recuperação.'}</p></div></header>
     ${modeSwitch()}
+    ${planEdit ? planEditor() : `<div class="sec-h"><h3>A tua semana</h3><button class="btn ghost sm edit-plan" data-planedit>${ic('edit')} Editar plano</button></div>
+    ${S.plans && S.plans[S.mode] ? '<p class="muted small plan-custom">Plano personalizado por ti.</p>' : ''}
     <div class="list plan">${order.map(d => {
-      const pd = myPlan()[d], w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null;
+      const pd = myPlan()[d];
+      if (!pd.w) return `<div class="plan-row rest ${d === td ? 'now' : ''}"><span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span><span class="pinfo"><span class="eyebrow">Descanso</span><b>Dia de descanso</b><small>Recupera. Se quiseres, faz a Mobilidade.</small></span><button class="round-btn ghost-rb" data-open="mobility" aria-label="Ver mobilidade">${ic('next')}</button></div>`;
+      const w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null;
       return `<div class="plan-row ${d === td ? 'now' : ''}">
         <button class="plan-open" data-open="${w.id}" aria-label="Ver detalhes de ${esc(w.name)}">
           <span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span>
@@ -1726,7 +1837,7 @@ const VIEWS = {
         <button class="round-btn" data-start="${w.id}" aria-label="Começar ${esc(w.name)}">${ic('play')}</button>
         ${x ? `<button class="plan-extra" data-open="${x.id}"><span>+ ${esc(x.name)}</span><small>${plan(x).min} min ›</small></button>` : ''}
       </div>`;
-    }).join('')}</div>
+    }).join('')}</div>`}
     <section class="card">
       <h3>Como progredir</h3>
       ${isGym() ? `<ol class="steps">
@@ -2183,7 +2294,7 @@ document.addEventListener('click', ev => {
   const t = ev.target.closest('button, [data-ex]'); if (!t) { if (ev.target.id === 'modal') closeEx(); return; }
   const d = t.dataset;
   if (d.go) return go(d.go);
-  if (d.mode) { if (S.mode !== d.mode) { S.mode = d.mode; save(); render(true); } return; }
+  if (d.mode) { if (S.mode !== d.mode) { S.mode = d.mode; planEdit = false; PDRAFT = null; save(); render(true); } return; }
   if (d.open) return openWorkout(d.open);
   if (d.start) return startWorkout(d.start);
   if (d.ex) return openEx(d.ex);
@@ -2200,6 +2311,14 @@ document.addEventListener('click', ev => {
     return;
   }
   if (d.delbest) { const id = d.delbest; return confirmBox({ title: 'Apagar a carga guardada?', text: `A última carga e o recorde de ${EX[id].name} voltam a ficar vazios. Útil se ficou registado um valor errado.`, yes: 'Apagar', no: 'Cancelar', icon: 'trash', danger: true, onYes: () => { delete S.loads[id]; delete S.best[id]; save(); closeEx(); render(); } }); }
+  if ('planedit' in d) return startPlanEdit();
+  if ('pcancel' in d) { planEdit = false; PDRAFT = null; return render(true); }
+  if ('psave' in d) { S.plans = Object.assign({}, S.plans || {}); const o = {}; PLAN_ORDER.forEach((day, i) => o[day] = { w: PDRAFT[i].w, extra: PDRAFT[i].extra }); S.plans[S.mode] = o; save(); planEdit = false; PDRAFT = null; render(true); return; }
+  if ('preset' in d) return confirmBox({ title: 'Repor o plano original?', text: 'O teu plano personalizado deste modo é apagado e volta o plano sugerido pela app.', yes: 'Repor', no: 'Cancelar', icon: 'cal', danger: true, onYes: () => { S.plans = Object.assign({}, S.plans || {}); delete S.plans[S.mode]; save(); planEdit = false; PDRAFT = null; render(true); } });
+  if (d.pick) return planPicker(+d.pick);
+  if (d.pmove) { const [i, s] = d.pmove.split(':').map(Number); movePlan(i, i + s); return redrawEditor(); }
+  if (d.pset !== undefined) { const [i, id] = d.pset.split(':'); PDRAFT[+i].w = id || null; if (!id) PDRAFT[+i].extra = null; closeEx(); return redrawEditor(); }
+  if (d.pnoextra) { PDRAFT[+d.pnoextra].extra = null; closeEx(); return redrawEditor(); }
   if (d.aim) { PL_AIM = d.aim; document.querySelectorAll('.pf-goal button').forEach(b => { const on = b.dataset.aim === d.aim; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); return; }
   if (d.level) { S.level = d.level; save(); return $('#sheet').hidden ? render() : $('#sheet')._redraw(); }
   if ('close' in d) return closeSheet();
@@ -2277,7 +2396,7 @@ render(true);
   setTimeout(() => sp.remove(), 2200);
 })();
 
-document.getElementById('fab').addEventListener('click', () => startWorkout(myPlan()[new Date().getDay()].w));
+document.getElementById('fab').addEventListener('click', () => startWorkout(planDay(new Date().getDay()).w));
 </script>
 </body>
 </html>
