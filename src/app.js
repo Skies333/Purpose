@@ -507,7 +507,7 @@ function openEx(id) {
     <button class="icon-btn mclose" data-mclose aria-label="Fechar">${ic('x')}</button>
     <div class="mfig" data-fig="${id}"></div>
     <span class="tag">${esc(e.group)}${e.place === 'gym' ? ' · Ginásio' : ''}</span><h2>${esc(e.name)}</h2><p class="muted">${esc(e.muscles)}</p>
-    ${hasLoad(id) && S.loads[id] ? `<div class="ex-load">${ic('dumb')}<span>Última carga <b>${kg(S.loads[id])} kg</b>${S.best[id] ? ` · recorde <b>${kg(S.best[id])} kg</b>` : ''}</span></div>` : ''}
+    ${hasLoad(id) && S.loads[id] ? `<div class="ex-load">${ic('dumb')}<span>Última carga <b>${kg(S.loads[id])} kg</b>${S.best[id] ? ` · recorde <b>${kg(S.best[id])} kg</b>` : ''}</span><button class="link danger sm-link" data-delbest="${id}">Apagar</button></div>` : ''}
     <h3>Como fazer</h3><ol class="cues">${e.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol>
     <div class="vars"><div><small>Mais fácil</small><p>${esc(e.easier)}</p></div><div class="hard"><small>Mais difícil</small><p>${esc(e.harder)}</p></div></div>
   </div>`;
@@ -742,16 +742,17 @@ function drawPlayer() {
   root.querySelectorAll('[data-fig]').forEach(x => makeFigure(x, x.dataset.fig));
   updT();
 }
-function curLoad(id) { return PL.loads[id] ?? S.loads[id] ?? (['db', 'db-front'].includes(EX[id].hold) ? 10 : 20); }
+function curLoad(id) { return PL.loads[id] ?? S.loads[id] ?? null; }
 function loadBox(id) {
   const v = curLoad(id), last = S.loads[id], best = S.best[id];
   return `<div class="loadbox"><button class="ld-btn" data-load="-1" aria-label="Menos carga">−</button>
-    <div class="ld-v"><b id="ld-val">${kg(v)}</b><span>kg</span><small>${last ? `Última vez: ${kg(last)} kg${best ? ` · recorde ${kg(best)} kg` : ''}` : 'Primeira vez: escolhe uma carga'}</small></div>
+    <div class="ld-v"><label class="sr" for="ld-val">Carga em kg</label><input id="ld-val" type="text" inputmode="decimal" autocomplete="off" placeholder="—" value="${v == null ? '' : kg(v)}"><span>kg</span>
+      <small>${last ? `Última vez: ${kg(last)} kg${best ? ` · recorde ${kg(best)} kg` : ''}` : 'Escreve a carga que vais usar'}</small></div>
     <button class="ld-btn" data-load="1" aria-label="Mais carga">+</button></div>`;
 }
 function commitLoad() {
   const s = PL && PL.steps[PL.idx]; if (!s || s.k !== 'work' || !s.sets || !hasLoad(s.ex)) return;
-  const v = curLoad(s.ex); PL.loads[s.ex] = v;
+  const v = curLoad(s.ex); if (v == null || !(v > 0)) return; PL.loads[s.ex] = v;
   const prevBest = S.best[s.ex];
   if (prevBest !== undefined && v > prevBest && !PL.prs.includes(s.ex)) { PL.prs.push(s.ex); S.prs++; beep(1318, .2); say(pick([`Novo recorde em ${EX[s.ex].name}!`, `Recorde pessoal! ${String(v).replace('.', ',')} quilos.`])); }
   if (prevBest === undefined || v > prevBest) S.best[s.ex] = v;
@@ -813,6 +814,7 @@ document.addEventListener('click', ev => {
     if (!medalsOpen) sec.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' });
     return;
   }
+  if (d.delbest) { const id = d.delbest; return confirmBox({ title: 'Apagar a carga guardada?', text: `A última carga e o recorde de ${EX[id].name} voltam a ficar vazios. Útil se ficou registado um valor errado.`, yes: 'Apagar', no: 'Cancelar', icon: 'trash', danger: true, onYes: () => { delete S.loads[id]; delete S.best[id]; save(); closeEx(); render(); } }); }
   if (d.aim) { PL_AIM = d.aim; document.querySelectorAll('.pf-goal button').forEach(b => { const on = b.dataset.aim === d.aim; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); return; }
   if (d.level) { S.level = d.level; save(); return $('#sheet').hidden ? render() : $('#sheet')._redraw(); }
   if ('close' in d) return closeSheet();
@@ -845,7 +847,7 @@ document.addEventListener('click', ev => {
   if ('skipphase' in d) { const ph = (PL.steps[PL.idx].phase) || (PL.steps[nextWorkIdx(PL.idx)] || {}).phase;
     if (ph === 'cool') return finish();
     const j = PL.steps.findIndex(x => x.main); return enter(j > 0 ? j : PL.idx + 1); }
-  if (d.load) { const s = PL.steps[PL.idx]; const v = Math.max(0, curLoad(s.ex) + +d.load * loadStep(s.ex)); PL.loads[s.ex] = v; const n = $('#ld-val'); if (n) { n.textContent = kg(v); if (!RM) { n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } } return; }
+  if (d.load) { const s = PL.steps[PL.idx]; const v = Math.max(0, (curLoad(s.ex) ?? 0) + +d.load * loadStep(s.ex)); PL.loads[s.ex] = v || null; const n = $('#ld-val'); if (n) { n.value = v ? kg(v) : ''; if (!RM) { n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } } return; }
   if ('skip' in d) { PL.steps[PL.idx].counted = 1; return enter(PL.idx + 1); }
   if ('next' in d) { const s = PL.steps[PL.idx]; if (s.k === 'work') endChime(); commitLoad(); return enter(PL.idx + 1); }
   if ('prev' in d) { let i = PL.idx - 1; while (i > 0 && PL.steps[i].k !== 'work') i--; return enter(Math.max(1, i)); }
@@ -873,7 +875,8 @@ document.addEventListener('change', ev => {
   const TG = { 'tg-warm': 'warm', 'tg-cool': 'cool', 'tg-sound': 'sound', 'tg-voice': 'voice' };
   if (TG[ev.target.id]) { S[TG[ev.target.id]] = ev.target.checked; save(); const sh = $('#sheet'); if (!sh.hidden && sh._redraw) { const y = sh.scrollTop; sh._redraw(); sh.scrollTop = y; } return; }
 });
-document.addEventListener('input', ev => { if (ev.target.id === 'ckg') calc(); });
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'ld-val' && PL) { const s = PL.steps[PL.idx]; const v = parseFloat(ev.target.value.replace(',', '.')); PL.loads[s.ex] = v > 0 && v < 1000 ? Math.round(v * 10) / 10 : null; return; } if (ev.target.id === 'ckg') calc(); });
 document.addEventListener('keydown', ev => {
   if (ev.key !== 'Escape') return;
   if (!$('#confirm').hidden) { const c = $('#confirm'); c.hidden = true; if (c._no && c._yes && PL) c._yes(); } else if (!$('#modal').hidden) closeEx(); else if (!$('#sheet').hidden) closeSheet();
