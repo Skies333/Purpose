@@ -257,7 +257,7 @@ function openSettings() {
       ${tg('tg-cool', S.cool, 'Alongamento final', '2 min no fim de cada treino')}
     </div>
   </div>`;
-  m.hidden = false;
+  m.hidden = false; document.body.classList.add('mlock');
 }
 /* ===== Editar plano ===== */
 let planEdit = false, PDRAFT = null;
@@ -285,7 +285,7 @@ function planPicker(i) {
     </div>
     ${cur.extra ? `<button class="link danger" data-pnoextra="${i}">Tirar o treino extra (${esc(WMAP[cur.extra].name)})</button>` : ''}
   </div>`;
-  m.hidden = false; m.querySelectorAll('[data-fig]').forEach(n => makeFigure(n, n.dataset.fig, { still: true, frame: 0 }));
+  m.hidden = false; document.body.classList.add('mlock'); m.querySelectorAll('[data-fig]').forEach(n => makeFigure(n, n.dataset.fig, { still: true, frame: 0 }));
 }
 function movePlan(from, to) {
   if (to < 0 || to > 6 || from === to) return;
@@ -627,9 +627,9 @@ function openEx(id) {
     <h3>Como fazer</h3><ol class="cues">${e.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol>
     <div class="vars"><div><small>Mais fácil</small><p>${esc(e.easier)}</p></div><div class="hard"><small>Mais difícil</small><p>${esc(e.harder)}</p></div></div>
   </div>`;
-  m.hidden = false; makeFigure($('.mfig', m), id);
+  m.hidden = false; document.body.classList.add('mlock'); makeFigure($('.mfig', m), id);
 }
-function closeEx() { const m = $('#modal'); if (m.hidden) return; animClose(m, 'modal-close', () => { m.hidden = true; m.innerHTML = ''; }); }
+function closeEx() { const m = $('#modal'); if (m.hidden) return; document.body.classList.remove('mlock'); animClose(m, 'modal-close', () => { m.hidden = true; m.innerHTML = ''; }); }
 
 /* ===== Player ===== */
 let PL = null, AC = null, wakeLock = null;
