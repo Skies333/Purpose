@@ -689,11 +689,18 @@ function scoreVoice(v) {
   return s;
 }
 function loadVoices() {
-  try { VOICES = speechSynthesis.getVoices().filter(v => scoreVoice(v) > -999).sort((x, y) => scoreVoice(y) - scoreVoice(x)); } catch (e) { VOICES = []; }
+  try {
+    const seen = new Set();
+    VOICES = speechSynthesis.getVoices().filter(v => scoreVoice(v) > -999).sort((x, y) => scoreVoice(y) - scoreVoice(x))
+      .filter(v => { const k = voiceLabel(v).toLowerCase() + '|' + (v.lang || '').toLowerCase().replace('_', '-'); if (seen.has(k)) return false; seen.add(k); return true; });
+  } catch (e) { VOICES = []; }
   const sel = document.getElementById('vsel'); if (sel) sel.outerHTML = voiceSelect();
 }
 try { speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); } catch (e) {}
-function pickVoice() { return VOICES.find(v => v.name === S.voiceName) || VOICES[0]; }
+function pickVoice() {
+  return VOICES.find(v => v.name === S.voiceName)
+    || (S.voiceName && VOICES.find(v => voiceLabel(v) === voiceLabel({ name: S.voiceName }))) || VOICES[0];
+}
 const isNatural = v => v && /natural|neural|online|premium|enhanced|melhorad|aprimorad|siri|google/i.test(v.name);
 function voiceLabel(v) {
   let n = v.name.replace(/\(.*?\)/g, '').replace(/^(Microsoft|Apple)\s+/i, '').split(' - ')[0].trim();
