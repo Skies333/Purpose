@@ -749,7 +749,7 @@ body.noselect{user-select:none;-webkit-user-select:none}
   <span class="nav-ind" aria-hidden="true"></span>
   <button data-go="inicio"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Início</button>
   <button data-go="treinos"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>Treinos</button>
-  <button class="fab" id="fab" aria-label="Começar o treino de hoje"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="fab" id="fab" aria-label="Ver o treino de hoje"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button data-go="plano"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>Plano</button>
   <button data-go="progresso"><svg class="ic" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Progresso</button>
 </nav>
@@ -2673,7 +2673,7 @@ render(true);
   setTimeout(() => sp.remove(), 2200);
 })();
 
-document.getElementById('fab').addEventListener('click', () => startWorkout(planDay(new Date().getDay()).w));
+document.getElementById('fab').addEventListener('click', () => openWorkout(planDay(new Date().getDay()).w));
 </script>
 </body>
 </html>
