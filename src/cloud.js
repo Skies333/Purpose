@@ -53,6 +53,17 @@ function mergeStates(a, b) {
   out.loads = Object.assign({}, older.loads || {}, newer.loads || {});
   out.best = {}; for (const s of [a.best || {}, b.best || {}]) for (const k in s) out.best[k] = Math.max(out.best[k] || 0, s[k]);
   out.prs = Math.max(a.prs || 0, b.prs || 0);
+  // perfil e definições: vence a alteração mais recente de cada campo (a = nuvem, b = este aparelho)
+  const fa = a._f || {}, fb = b._f || {}, empty = v => v === undefined || v === null || v === '';
+  out._f = {};
+  FIELDS.forEach(k => {
+    const ta = fa[k] || 0, tb = fb[k] || 0;
+    let v;
+    if (ta || tb) v = tb > ta ? b[k] : a[k];
+    else v = empty(a[k]) ? b[k] : a[k];          // sem registo de alteração: nunca trocar um valor real por um vazio
+    if (empty(v)) v = empty(a[k]) ? b[k] : a[k];
+    out[k] = v; out._f[k] = Math.max(ta, tb);
+  });
   const mx = (p, q) => { const r = Object.assign({}, p); for (const k in q) r[k] = Math.max(r[k] || 0, q[k]); return r; };
   out.totals = { reps: mx((a.totals || {}).reps || {}, (b.totals || {}).reps || {}), sec: mx((a.totals || {}).sec || {}, (b.totals || {}).sec || {}) };
   return out;
@@ -67,7 +78,7 @@ async function pullMerge() {
     if (data && data.state) {
       const keep = {}; LOCAL_ONLY.forEach(k => { if (k in S) keep[k] = S[k]; });
       const merged = mergeStates(data.state, S);
-      Object.keys(S).forEach(k => delete S[k]); Object.assign(S, merged, keep);
+      Object.keys(S).forEach(k => delete S[k]); Object.assign(S, merged, keep); snapFields();
       S.totals = S.totals || { reps: {}, sec: {} }; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {};
       try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
     }
@@ -137,7 +148,7 @@ async function signOut() {
   CL.user = null; CL.status = 'idle'; CL.step = 'email'; CL.showEmail = false; CL.lastSync = null;
   // limpa os dados da conta neste aparelho (ficam guardados na nuvem); mantém só as preferências do aparelho
   const keep = {}; LOCAL_ONLY.forEach(k => { if (k in S) keep[k] = S[k]; });
-  Object.keys(S).forEach(k => delete S[k]); Object.assign(S, DEF_S(), keep);
+  Object.keys(S).forEach(k => delete S[k]); Object.assign(S, DEF_S(), keep); snapFields();
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
   const r = await CL.sb.auth.signInAnonymously(); if (!r.error) CL.user = r.data.user;
   render(true);

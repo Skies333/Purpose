@@ -1,10 +1,19 @@
+// campos de perfil/definições: guardamos a hora de cada alteração para a sincronização não apagar o que mudaste
+const FIELDS = ['name', 'height', 'aim', 'goal', 'level', 'mode', 'warm', 'cool'];
+let SNAP = {};
+function snapFields() { SNAP = {}; FIELDS.forEach(k => SNAP[k] = JSON.stringify(S[k] ?? null)); }
 /* ===== Estado ===== */
 const KEY = 'forjaCasa.v1';
 const DEF_S = () => ({ name: '', history: [], weights: [], goal: 5, level: 'av', sound: true, voice: true, mode: 'casa', loads: {}, best: {}, prs: 0, warm: true, cool: true, totals: { reps: {}, sec: {} }, unlocked: [] });
 let S = DEF_S();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
-S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa';
-function save() { S._t = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudQueue === 'function') cloudQueue(); }
+S._f = S._f || {}; S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa'; snapFields();
+function save() {
+  const now = Date.now(); S._t = now; S._f = S._f || {};
+  FIELDS.forEach(k => { if (SNAP[k] !== undefined && JSON.stringify(S[k] ?? null) !== SNAP[k]) S._f[k] = now; });
+  snapFields();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudQueue === 'function') cloudQueue();
+}
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
