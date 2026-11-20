@@ -54,6 +54,8 @@ const IC = {
   house: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l5-5-5-5M15 12H4"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   grip: '<circle cx="9" cy="6" r="1.4" fill="currentColor"/><circle cx="15" cy="6" r="1.4" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="currentColor"/><circle cx="15" cy="12" r="1.4" fill="currentColor"/><circle cx="9" cy="18" r="1.4" fill="currentColor"/><circle cx="15" cy="18" r="1.4" fill="currentColor"/>',
   up: '<path d="M6 15l6-6 6 6"/>',
@@ -231,30 +233,39 @@ function remindBlock() {
   if (note) return `<div class="card remind off"><div class="rm-h">${ic('bell')}<div><b>Lembrete de treino</b><small>${note}</small></div></div></div>`;
   return `<div class="card remind ${r.on ? 'on' : ''}" id="remind">
     <label class="tg plain"><input type="checkbox" id="tg-remind" ${r.on ? 'checked' : ''}><span class="sw"></span><div><b>Lembrete de treino</b><small>Nos dias com treino no teu plano, se ainda não treinaste.</small></div></label>
-    <div class="rm-row ${r.on ? '' : 'dis'}"><label for="remind-time">Hora do lembrete</label><input type="time" id="remind-time" value="${r.time || '18:00'}" ${r.on ? '' : 'disabled'}></div>
+    ${r.on ? `<div class="rm-row"><label for="remind-time">Hora do lembrete</label><input type="time" id="remind-time" value="${r.time || '18:00'}"></div>` : ''}
     <p class="rm-msg" id="remind-msg">${r.on ? 'Ativo neste aparelho.' : ''}</p>
     ${r.on ? '<button class="btn ghost sm" data-ptest>Enviar notificação de teste</button>' : ''}
   </div>`;
 }
-function redrawRemind(msg, ok) { const el = $('#remind'); if (!el) return; el.outerHTML = remindBlock(); const m = $('#remind-msg'); if (m && msg) { m.textContent = msg; m.className = 'rm-msg ' + (ok ? 'ok' : 'err'); } }
+function setStatus(id, txt) { const n = document.getElementById(id); if (n) n.textContent = txt; }
+function refreshSettingsStatus() {
+  setStatus('acc-rem-st', S.remind && S.remind.on ? `Ligado · ${S.remind.time || '18:00'}` : 'Desligado');
+  setStatus('acc-voz-st', !S.sound && !S.voice ? 'Tudo desligado' : S.voice ? 'Voz ligada' : 'Só sons');
+  setStatus('acc-tr-st', [S.warm ? 'Aquecimento' : '', S.cool ? 'Alongamento' : ''].filter(Boolean).join(' + ') || 'Sem extras');
+}
+function redrawRemind(msg, ok) { refreshSettingsStatus(); const el = $('#remind'); if (!el) return; el.outerHTML = remindBlock(); const m = $('#remind-msg'); if (m && msg) { m.textContent = msg; m.className = 'rm-msg ' + (ok ? 'ok' : 'err'); } }
 function openSettings() {
   const tg = (id, on, t, s) => `<label class="tg"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span class="sw"></span><div><b>${t}</b><small>${s}</small></div></label>`;
   const m = $('#modal');
+  const rs = S.remind && S.remind.on ? `Ligado · ${S.remind.time || '18:00'}` : 'Desligado';
+  const vs = !S.sound && !S.voice ? 'Tudo desligado' : S.voice ? 'Voz ligada' : 'Só sons';
+  const ts = [S.warm ? 'Aquecimento' : '', S.cool ? 'Alongamento' : ''].filter(Boolean).join(' + ') || 'Sem extras';
+  const acc = (id, icon, title, status, body, open) => `<details class="acc" id="${id}" ${open ? 'open' : ''}><summary><span class="acc-ic">${ic(icon)}</span><span class="acc-t"><b>${title}</b><small id="${id}-st">${status}</small></span><span class="acc-ch">${ic('down')}</span></summary><div class="acc-body">${body}</div></details>`;
   m.innerHTML = `<div class="modal-in settings" role="dialog" aria-modal="true" aria-labelledby="st-t">
     <button class="icon-btn mclose" data-mclose aria-label="Fechar">${ic('x')}</button>
     <h2 id="st-t">Definições</h2>
-    <div class="sec-h"><h3>Lembretes</h3></div>
-    ${remindBlock()}
-    <div class="sec-h"><h3>Som e voz</h3></div>
-    <div class="toggles">
+    <div class="acc-list">
+    ${acc('acc-rem', 'bell', 'Lembretes', rs, remindBlock())}
+    ${acc('acc-voz', 'sound', 'Som e voz', vs, `<div class="toggles">
       ${tg('tg-sound', S.sound, 'Sons', 'Contagem 3-2-1 e som de fim de exercício')}
       ${tg('tg-voice', S.voice, 'Voz do treinador', 'Anuncia exercícios, descansos e recordes')}
     </div>
-    ${voiceCard()}
-    <div class="sec-h"><h3>Treino</h3></div>
-    <div class="toggles">
+    <details class="acc sub"><summary><span class="acc-t"><b>Escolher a voz</b><small>${VOICES.length ? esc(voiceLabel(pickVoice())) : 'Vozes do teu aparelho'}</small></span><span class="acc-ch">${ic('down')}</span></summary><div class="acc-body">${voiceCard()}</div></details>`)}
+    ${acc('acc-tr', 'layers', 'Treino', ts, `<div class="toggles">
       ${tg('tg-warm', S.warm, 'Aquecimento automático', '2 min antes de cada treino')}
       ${tg('tg-cool', S.cool, 'Alongamento final', '2 min no fim de cada treino')}
+    </div>`)}
     </div>
   </div>`;
   m.hidden = false; document.body.classList.add('mlock');
@@ -526,12 +537,15 @@ const VIEWS = {
       </form>
     </section>
     ${cloudCard()}
-    <section class="card"><div class="sec-h in"><h3>Histórico</h3><span class="muted small">${S.history.length} treino${S.history.length === 1 ? '' : 's'}</span></div>
-      ${S.history.length ? `<div class="hist">${S.history.slice().reverse().slice(0, 30).map(h => { const w = WMAP[h.w]; const dd = new Date(h.d + 'T12:00');
-        return `<div class="hrow"><div><b>${esc(w ? w.name : h.w)}</b><small>${dd.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })} · ${esc(h.lvl || '')}</small></div><span>${h.min} min</span></div>`; }).join('')}</div>
-        <button class="link danger" id="clear">${ic('trash')} Apagar histórico</button>`
+    ${(() => { const H = S.history.slice().reverse().slice(0, 50);
+      const row = h => { const w = WMAP[h.w]; const dd = new Date(h.d + 'T12:00'); return `<div class="hrow"><div><b>${esc(w ? w.name : h.w)}</b><small>${dd.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })}${h.lvl ? ' · ' + esc(h.lvl) : ''}</small></div><span>${h.min} min</span></div>`; };
+      return `<section class="card"><div class="sec-h in"><h3>Histórico</h3><span class="muted small">${S.history.length} treino${S.history.length === 1 ? '' : 's'}</span></div>
+      ${H.length ? `<div class="hist">${H.slice(0, 3).map(row).join('')}</div>
+        ${H.length > 3 ? `<details class="acc hist-more"><summary><span class="acc-t"><b>Ver todo o histórico</b><small>mais ${H.length - 3} treino${H.length - 3 === 1 ? '' : 's'}</small></span><span class="acc-ch">${ic('down')}</span></summary><div class="acc-body"><div class="hist">${H.slice(3).map(row).join('')}</div>
+          <button class="link danger" id="clear">${ic('trash')} Apagar histórico</button></div></details>` : `<button class="link danger" id="clear">${ic('trash')} Apagar histórico</button>`}`
       : `<p class="empty">Ainda não há treinos. O primeiro fica guardado aqui assim que o terminares.</p>`}
-    </section>
+    </section>`; })()}
+    ${typeof CL !== 'undefined' && CL.user && !CL.user.is_anonymous ? `<button class="btn ghost full signout" data-clout>${ic('logout')} Terminar sessão</button>` : ''}
     <p class="muted small center">purpose · treino em casa e no ginásio</p>`;
   },
 
@@ -1008,9 +1022,9 @@ document.addEventListener('change', ev => {
     });
     return;
   }
-  if (ev.target.id === 'remind-time') { S.remind = Object.assign({}, S.remind || {}, { time: ev.target.value || '18:00' }); save(); const m = $('#remind-msg'); if (m) { m.textContent = `Lembrete às ${S.remind.time}.`; m.className = 'rm-msg ok'; } return; }
+  if (ev.target.id === 'remind-time') { S.remind = Object.assign({}, S.remind || {}, { time: ev.target.value || '18:00' }); save(); refreshSettingsStatus(); const m = $('#remind-msg'); if (m) { m.textContent = `Lembrete às ${S.remind.time}.`; m.className = 'rm-msg ok'; } return; }
   const TG = { 'tg-warm': 'warm', 'tg-cool': 'cool', 'tg-sound': 'sound', 'tg-voice': 'voice' };
-  if (TG[ev.target.id]) { S[TG[ev.target.id]] = ev.target.checked; save(); const sh = $('#sheet'); if (!sh.hidden && sh._redraw) { const y = sh.scrollTop; sh._redraw(); sh.scrollTop = y; } return; }
+  if (TG[ev.target.id]) { S[TG[ev.target.id]] = ev.target.checked; save(); refreshSettingsStatus(); const sh = $('#sheet'); if (!sh.hidden && sh._redraw) { const y = sh.scrollTop; sh._redraw(); sh.scrollTop = y; } return; }
 });
 document.addEventListener('input', ev => {
   if (ev.target.id === 'ld-val' && PL) { const s = PL.steps[PL.idx]; const v = parseFloat(ev.target.value.replace(',', '.')); PL.loads[s.ex] = v > 0 && v < 1000 ? Math.round(v * 10) / 10 : null; return; } if (ev.target.id === 'ckg') calc(); });

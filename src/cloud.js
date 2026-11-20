@@ -164,14 +164,14 @@ function cloudCard() {
   const msg = CL.msg ? `<p class="cl-msg">${esc(CL.msg)}</p>` : '';
   if (CL.user && !isAnon()) {
     const viaG = (CL.user.app_metadata && (CL.user.app_metadata.providers || [CL.user.app_metadata.provider]) || []).includes('google');
-    return `<section class="card cloud on" id="cloud"><div class="cl-h">${viaG ? `<span class="g-ic">${G_ICON}</span>` : icCloud}<div><h3>Progresso na nuvem</h3><p class="muted small">${esc(CL.user.email || '')}</p></div><span class="cl-dot ${CL.status}"></span></div>
-      <p class="cl-st">${st}. Entra com a mesma conta noutro telemóvel e o progresso aparece lá.</p>
-      <div class="row-btns"><button class="btn ghost sm" data-clsync>Sincronizar agora</button><button class="btn ghost sm" data-clout>Terminar sessão</button></div>${msg}</section>`;
+    const short = { sync: 'A sincronizar…', ok: CL.lastSync ? 'Guardado às ' + CL.lastSync.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : 'Guardado', error: 'Erro ao sincronizar', offline: 'Sem internet', idle: 'Guardado', sending: 'A abrir…' }[CL.status] || 'Guardado';
+    return `<section class="card cloud slim" id="cloud"><div class="cl-row">${viaG ? `<span class="g-ic">${G_ICON}</span>` : icCloud}
+      <div class="cl-t"><b>${esc(CL.user.email || 'Conta ligada')}</b><small><span class="cl-dot inl ${CL.status}"></span>${short}</small></div>
+      <button class="icon-btn cl-sync ${CL.status === 'sync' ? 'spin' : ''}" data-clsync aria-label="Sincronizar agora"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>${msg}</section>`;
   }
   const sending = CL.status === 'sending';
   const anonNote = isAnon() ? `<p class="cl-st"><span class="cl-dot ${CL.status} inl"></span>${CL.status === 'error' ? st : 'O teu progresso já está guardado na nuvem, mas só neste aparelho.'}</p>` : '';
-  return `<section class="card cloud" id="cloud"><div class="cl-h">${icCloud}<div><h3>Não percas o teu progresso</h3><p class="muted small">Liga a tua conta Google para recuperares o histórico, as medalhas e as cargas em qualquer telemóvel.</p></div></div>
-    ${anonNote}
+  return `<section class="card cloud" id="cloud"><div class="cl-h">${icCloud}<div><h3>Guarda o teu progresso</h3><p class="muted small">Entra para não perderes nada e teres tudo em qualquer aparelho.</p></div></div>
     <button class="btn gbtn full" data-clgoogle ${sending ? 'disabled' : ''}>${G_ICON}<span>${sending ? 'A abrir o Google…' : 'Continuar com Google'}</span></button>
     ${CL.showEmail ? (CL.step === 'email'
       ? `<form class="inline" id="cl-email-f"><label for="cl-email" class="sr">Email</label><input id="cl-email" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" value="${esc(CL.email)}"><button class="btn ghost sm" type="submit" ${sending ? 'disabled' : ''}>Enviar código</button></form>`

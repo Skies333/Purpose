@@ -548,6 +548,43 @@ body.lock::after{display:none}
 .settings{gap:12px;align-items:stretch}
 .settings .sec-h{margin-top:4px}
 .settings .voice-card{background:var(--surface2)}
+/* acordeões */
+.acc-list{display:flex;flex-direction:column;gap:8px}
+.acc{background:var(--surface2);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.acc>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 14px;cursor:pointer;user-select:none}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary:focus-visible{outline:2px solid var(--lime);outline-offset:-2px;border-radius:18px}
+.acc-ic{width:36px;height:36px;border-radius:12px;background:var(--surface);display:grid;place-items:center;color:var(--lime);flex:none}
+.acc-ic .ic{width:18px;height:18px}
+.acc-t{flex:1;display:flex;flex-direction:column;min-width:0}
+.acc-t small{color:var(--muted);font-size:12.5px}
+.acc-ch{color:var(--muted);transition:transform .3s}
+.acc-ch .ic{width:18px;height:18px}
+.acc[open]>summary .acc-ch{transform:rotate(180deg)}
+.acc[open]>summary{border-bottom:1px solid var(--line)}
+.acc-body{padding:12px;display:flex;flex-direction:column;gap:10px;animation:fadeIn .25s ease}
+.acc .toggles .tg{background:var(--surface)}
+.acc .remind{background:var(--surface);border-color:var(--line)}
+.acc.sub{background:var(--surface)}
+.acc.sub>summary{padding:12px 14px}
+.acc.sub .voice-card{background:transparent;border:0;padding:0;margin:0;box-shadow:none}
+.acc.sub .voice-card>.sec-h{display:none}
+.hist-more{background:transparent;border:0;border-radius:0;margin-top:2px}
+.hist-more>summary{padding:10px 0;border-top:1px solid var(--line)}
+.hist-more[open]>summary{border-bottom:0}
+.hist-more .acc-body{padding:0}
+/* nuvem simples */
+.cloud.slim{padding:12px 12px 12px 14px}
+.cl-row{display:flex;align-items:center;gap:12px}
+.cl-t{flex:1;display:flex;flex-direction:column;min-width:0}
+.cl-t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.cl-t small{color:var(--muted);font-size:12.5px;display:flex;align-items:center}
+.cl-sync .ic{width:18px;height:18px}
+.cl-sync.spin .ic{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.signout{color:var(--danger);border-color:rgba(255,122,107,.3);margin-top:4px}
+.signout:hover{border-color:var(--danger)}
+.signout .ic{width:18px;height:18px}
 /* lembretes */
 .remind{gap:12px}
 .remind.on{border-color:rgba(214,245,61,.35)}
