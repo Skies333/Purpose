@@ -77,7 +77,8 @@ const myPlan = () => {
   return out;
 };
 const planDay = d => { const pd = myPlan()[d]; return pd.w ? pd : { w: 'mobility', focus: 'Dia de descanso', rest: true }; };
-const ZONE_FIG_GYM = { 'Corpo inteiro': 'bbsquat', 'Parte de cima': 'barrow', 'Peito & Tríceps': 'bench', 'Costas & Bíceps': 'pulldown', 'Ombros & Braços': 'lateralraise', 'Pernas': 'legpress' };
+const ZONE_FIG_GYM = { 'Corpo inteiro': 'deadlift', 'Parte de cima': 'barrow', 'Peito & Tríceps': 'bench', 'Costas & Bíceps': 'pulldown', 'Ombros & Braços': 'lateralraise', 'Pernas': 'legpress', 'Core': 'abwheel' };
+const kitOf = w => { const k = [...new Set(w.items.map(i => EX[i[0]].kit).filter(Boolean))]; return k.length ? k.join(', ').replace(/^./, c => c.toUpperCase()) : 'Nenhum'; };
 const hasLoad = id => EX[id].place === 'gym' && !BODYWEIGHT.includes(id);
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
@@ -89,9 +90,14 @@ function modeSwitch(compact) {
 
 /* ===== Cálculos ===== */
 const lvl = () => LEVELS.find(l => l.id === S.level) || LEVELS[1];
-function scaled(item, L) {
-  const [ex, mode, amt, side, sets] = item;
-  if (sets) return { ex, mode, amt, side, sets: Math.max(2, sets + L.dr) };
+function scaled(item, L, home) {
+  const [ex, mode, amt, side, sets, rest] = item;
+  if (sets) {
+    // em casa não há carga: o nível mexe nas séries e nas repetições; no ginásio só nas séries (a carga faz o resto)
+    let a2 = amt;
+    if (home && amt !== 'MÁX') { a2 = amt * L.k; a2 = mode === 't' ? Math.round(a2 / 5) * 5 : Math.round(a2); a2 = Math.max(mode === 't' ? 15 : 4, a2); }
+    return { ex, mode, amt: a2, side, sets: Math.max(2, sets + L.dr), rest: rest ? Math.round(rest * L.rk / 5) * 5 : 0 };
+  }
   if (amt === 'MÁX') return { ex, mode, amt, side };
   let v = amt * L.k;
   v = mode === 't' ? Math.round(v / 5) * 5 : Math.round(v);
@@ -99,10 +105,11 @@ function scaled(item, L) {
 }
 function plan(w, L = lvl()) {
   const rounds = Math.max(1, w.rounds + L.dr), rest = Math.round(w.rest * L.rk / 5) * 5, rr = Math.round(w.roundRest * L.rk / 5) * 5;
-  const items = w.items.map(i => scaled(i, L));
+  const items = w.items.map(i => scaled(i, L, w.place !== 'gym'));
+  items.forEach(i => { if (i.sets && !i.rest) i.rest = rest; });
   let sec = 0;
   if (w.mode === 'sets') {
-    items.forEach(i => sec += i.sets * ((i.amt === 'MÁX' ? 10 : i.amt) * 3.5 * (i.side ? 2 : 1)) + (i.sets - 1) * rest);
+    items.forEach(i => sec += i.sets * ((i.mode === 't' ? i.amt : (i.amt === 'MÁX' ? 10 : i.amt) * 3.5) * (i.side ? 2 : 1)) + (i.sets - 1) * i.rest);
     sec += rr * (items.length - 1);
   } else {
   items.forEach(i => sec += (i.mode === 't' ? i.amt : (i.amt === 'MÁX' ? 15 : i.amt) * 3.2) * (i.side ? 2 : 1));
@@ -111,9 +118,12 @@ function plan(w, L = lvl()) {
   const extras = w.id === 'mobility' ? 0 : (S.warm ? WARMUP.reduce((s, x) => s + x[1], 0) : 0) + (S.cool ? COOLDOWN.reduce((s, x) => s + x[1], 0) : 0);
   const min = Math.round((sec + extras) / 60);
   const sets = items.reduce((s, i) => s + (i.sets || rounds), 0);
-  return { rounds: w.mode === 'sets' ? 1 : rounds, rest, rr, items, min, kcal: Math.round(min * w.rate), sets, gym: w.mode === 'sets' };
+  const rs = items.filter(i => i.sets).map(i => i.rest), restTxt = rs.length && Math.min(...rs) !== Math.max(...rs) ? `${Math.min(...rs)}–${Math.max(...rs)} s` : `${rs.length ? rs[0] : rest} s`;
+  return { rounds: w.mode === 'sets' ? 1 : rounds, rest, rr, items, min, kcal: Math.round(min * w.rate), sets, gym: w.mode === 'sets', restTxt };
 }
-const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.side ? ' / perna' : '')}${hasLoad(i.ex) && S.loads[i.ex] ? ` · ${kg(S.loads[i.ex])} kg` : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / perna' : ''}`);
+/* "por perna" nas pernas e glúteos, "por lado" no resto (braços, core, mobilidade) */
+const sideW = ex => ['Pernas', 'Glúteos'].includes(EX[ex].group) ? 'perna' : 'lado';
+const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.mode === 't' ? ' s' : '') + (i.side ? ' / ' + sideW(i.ex) : '')}${hasLoad(i.ex) && S.loads[i.ex] ? ` · ${kg(S.loads[i.ex])} kg` : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / ' + sideW(i.ex) : ''}`);
 
 /* dias de descanso e de mobilidade do plano não quebram a sequência (mas também não contam) */
 function restOk(d) { const pd = myPlan()[d.getDay()]; const w = pd && pd.w ? WMAP[pd.w] : null; return !w || w.id === 'mobility' || w.cat === 'Mobilidade'; }
@@ -425,10 +435,10 @@ function achievements() {
     ['wk4', 'Mês perfeito', 'Cumpre o objetivo semanal 4 vezes', 'shield', perfectWeeks(), 4],
     ['push1k', 'Mil flexões', '1000 flexões no total (todas as variantes)', 'bolt', sumOf(R, PUSH_EX), 1000],
     ['leg1k', 'Pernas de aço', '1000 reps de agachamentos e afundos', 'leg', sumOf(R, LEG_EX), 1000],
-    ['legday', 'Nunca falho pernas', '10 treinos de pernas', 'leg', H.filter(h => h.w === 'legs' || h.w === 'legsx').length, 10],
+    ['legday', 'Nunca falho pernas', '10 treinos de pernas', 'leg', H.filter(h => WMAP[h.w] && WMAP[h.w].cat === 'Pernas').length, 10],
     ['plank', 'Core de pedra', '10 minutos de prancha no total', 'shield', Math.floor((T.plank || 0) / 60), 10],
     ['brutal', 'Modo Brutal', 'Termina um treino no nível Brutal', 'bolt', H.filter(h => h.lv === 'br').length, 1],
-    ['all', 'Explorador', 'Experimenta os 10 treinos em casa', 'compass', [...kinds].filter(k => WMAP[k] && WMAP[k].place === 'casa').length, WORKOUTS.filter(w => w.place === 'casa').length],
+    ['all', 'Explorador', `Experimenta os ${WORKOUTS.filter(w => w.place === 'casa').length} treinos em casa`, 'compass', [...kinds].filter(k => WMAP[k] && WMAP[k].place === 'casa').length, WORKOUTS.filter(w => w.place === 'casa').length],
     ['hours', '10 horas', 'Acumula 10 horas de treino', 'clock', Math.floor(mins / 60), 10],
     ['early', 'Madrugador', 'Treina antes das 8h', 'sun', H.filter(h => h.h !== undefined && h.h < 8).length, 1],
     ['gym1', 'Bem-vindo ao ginásio', 'Termina o primeiro treino no ginásio', 'dumb', H.filter(h => WMAP[h.w] && WMAP[h.w].place === 'gym').length, 1],
@@ -482,7 +492,7 @@ const VIEWS = {
       return `<button class="zone" data-cat="${c}"><div class="zfig" data-fig="${(isGym() ? ZONE_FIG_GYM : ZONE_FIG)[c]}" data-phase="${i * .41}"></div><div class="ztxt"><b>${esc(c)}</b><small>${n} treino${n > 1 ? 's' : ''}</small></div><span class="zgo">${ic('next')}</span></button>`; }).join('')}</div>
 
     <div class="sec-h"><h3>Treinos populares</h3></div>
-    <div class="hscroll">${(isGym() ? ['gpush', 'gpull', 'glegs', 'gfull', 'garms'] : ['brutal', 'push', 'legs', 'hiit', 'express']).map((id, i) => wCard(WMAP[id], i)).join('')}</div>
+    <div class="hscroll">${(isGym() ? ['gpush', 'gpull', 'glegs', 'glegs2', 'gupper'] : ['push', 'pull', 'legs', 'brutal', 'hiit']).map((id, i) => wCard(WMAP[id], i)).join('')}</div>
 
     <button class="card tipcard" data-go="dicas"><div><span class="eyebrow">Ganhar massa</span><h3>Calcula a tua proteína diária</h3><p class="muted">Sem comida suficiente não há músculo. Vê quanto precisas.</p></div>${ic('next', 'chev')}</button>`;
   },
@@ -491,7 +501,8 @@ const VIEWS = {
     if (!myCats().includes(filterCat)) filterCat = 'Todos';
     const list = myWorkouts().filter(w => filterCat === 'Todos' || w.cat === filterCat);
     const exIds = Object.keys(EX).filter(k => isGym() ? EX[k].place === 'gym' : !EX[k].place);
-    const groups = [...new Set(exIds.map(k => EX[k].group))];
+    const GO = ['Peito', 'Ombros', 'Tríceps', 'Costas', 'Bíceps', 'Braços', 'Pernas', 'Glúteos', 'Core', 'Cardio', 'Mobilidade'];
+    const groups = [...new Set(exIds.map(k => EX[k].group))].sort((x, y) => (GO.indexOf(x) + 99) % 99 - (GO.indexOf(y) + 99) % 99);
     return `
     <header class="top"><div><h1>Explorar</h1><p class="muted">${isGym() ? 'Barras, halteres e máquinas' : 'Zero equipamento, só o teu corpo'}</p></div></header>
     ${modeSwitch()}
@@ -519,7 +530,7 @@ const VIEWS = {
     const doneDays = order.filter(d => doneOn(d).length).length;
     const doneTag = d => { const hs = doneOn(d); if (!hs.length) return ''; const w = WMAP[hs[hs.length - 1].w]; return `<span class="p-done">${ic('check')} Feito${w && w.id !== (myPlan()[d].w || 'mobility') ? ' · ' + esc(w.name) : ''}</span>`; };
     return `
-    <header class="top"><div><h1>Plano semanal</h1><p class="muted">${isGym() ? 'Push, pull, pernas, parte de cima e corpo inteiro: cada músculo 2× por semana, com descanso ativo pelo meio.' : 'Divisão para ganhar massa e definir: cada músculo 2× por semana, com 1 dia de recuperação.'}</p></div></header>
+    <header class="top"><div><h1>Plano semanal</h1><p class="muted">${isGym() ? 'Empurrar, puxar, pernas, parte de cima e posteriores: cada músculo 2× por semana, com descanso ativo a meio da semana.' : 'Empurrar, puxar e pernas duas vezes por semana, com cardio e mobilidade pelo meio. Feito para ganhar massa e definir.'}</p></div></header>
     ${modeSwitch()}
     ${planEdit ? planEditor() : `<div class="sec-h"><h3>A tua semana</h3><button class="btn ghost sm edit-plan" data-planedit>${ic('edit')} Editar plano</button></div>
     ${S.plans && S.plans[S.mode] ? '<p class="muted small plan-custom">Plano personalizado por ti.</p>' : ''}
@@ -540,16 +551,18 @@ const VIEWS = {
     <section class="card">
       <h3>Como progredir</h3>
       ${isGym() ? `<ol class="steps">
-        <li><b>Escolhe a carga certa.</b> Uma carga com que acabes cada série com 1–2 reps de reserva, sempre com boa técnica.</li>
-        <li><b>Dupla progressão.</b> Quando fizeres as reps todas em todas as séries, sobe 2,5 kg (1 kg nos halteres). A app guarda a carga de cada exercício.</li>
-        <li><b>Níveis.</b> Intermédio tira uma série a cada exercício; Brutal junta uma e encurta os descansos.</li>
+        <li><b>Intensidade certa.</b> Acaba cada série com 1–2 reps de reserva. Nos compostos pesados (supino, agachamento, peso morto) fica sempre com boa técnica; no isolamento podes ir até à falha.</li>
+        <li><b>Dupla progressão.</b> Quando fizeres as reps todas em todas as séries, sobe 2,5 kg na barra ou 1–2 kg nos halteres e volta a construir as reps. A app guarda a carga de cada exercício.</li>
+        <li><b>Semana leve a cada 6–8.</b> Mesmos exercícios com metade das séries e um pouco menos de carga. As articulações recuperam e voltas mais forte.</li>
+        <li><b>Níveis.</b> Intermédio tira uma série a cada exercício, Brutal junta uma e encurta os descansos.</li>
       </ol>
-      <p class="muted small">Regista sempre a carga no fim de cada série. Bater recordes conta para as medalhas.</p>` : `<ol class="steps">
-        <li><b>Semanas 1–3 · Intermédio.</b> Aprende a técnica e cumpre todas as repetições.</li>
-        <li><b>Semanas 4–8 · Avançado.</b> Quando acabares os treinos com 2–3 reps "de reserva", sobe de nível.</li>
-        <li><b>Semana 9+ · Brutal.</b> Mais voltas, menos descanso. Usa as variantes "mais difícil" de cada exercício.</li>
+      <p class="muted small">Para crescer: 1,6–2 g de proteína por kg de peso por dia, um ligeiro excedente calórico e 7–9 h de sono. Para definir, ligeiro défice e a mesma proteína.</p>` : `<ol class="steps">
+        <li><b>Séries perto da falha.</b> Sem pesos, cada série tem de acabar a 1–3 reps de não conseguires mais. Se fazes 20 com facilidade, o exercício já é fácil demais.</li>
+        <li><b>Sobe de variante, não só de reps.</b> Quando passares as reps indicadas em todas as séries, usa a versão "mais difícil" do exercício (ver em cada um). Ex.: flexões → declinadas → arqueiro.</li>
+        <li><b>Abranda a descida.</b> 3–4 s a descer e 1 s de pausa em baixo tornam qualquer exercício muito mais duro, sem material.</li>
+        <li><b>Semana leve a cada 6–8.</b> Metade das séries, mesmos exercícios. Depois sobe um nível: Intermédio → Avançado → Brutal.</li>
       </ol>
-      <p class="muted small">Sem pesos, o músculo cresce quando aumentas a dificuldade: mais reps, descida mais lenta (3–4 s), pausas em baixo ou variantes mais difíceis.</p>`}
+      <p class="muted small">Para crescer: 1,6–2 g de proteína por kg de peso por dia, um ligeiro excedente calórico e 7–9 h de sono. Para definir, ligeiro défice e a mesma proteína.</p>`}
     </section>`;
   },
 
@@ -676,7 +689,7 @@ function openWorkout(id) {
         <h3>Sobre</h3><p class="muted">${esc(w.desc)}</p>
         <h3>Nível</h3>
         <div class="seg lv">${LEVELS.map(l => `<button class="${l.id === S.level ? 'on' : ''}" data-level="${l.id}">${l.label}</button>`).join('')}</div>
-        <div class="facts"><div><small>${p.gym ? 'Entre séries' : 'Descanso'}</small><b>${p.rest} s</b></div><div><small>${p.gym ? 'Entre exercícios' : 'Entre voltas'}</small><b>${p.rr} s</b></div><div><small>Equipamento</small><b>${w.place === 'gym' ? 'Ginásio' : w.items.some(i => ['row', 'dips', 'decline', 'bulgarian'].includes(i[0])) ? 'Cadeira/mesa' : 'Nenhum'}</b></div></div>
+        <div class="facts"><div><small>${p.gym ? 'Entre séries' : 'Descanso'}</small><b>${p.gym ? p.restTxt : p.rest + ' s'}</b></div><div><small>${p.gym ? 'Entre exercícios' : 'Entre voltas'}</small><b>${p.rr} s</b></div><div><small>Equipamento</small><b>${w.place === 'gym' ? 'Ginásio' : kitOf(w)}</b></div></div>
         ${w.id === 'mobility' ? '' : `<div class="toggles">
           <label class="tg"><input type="checkbox" id="tg-warm" ${S.warm ? 'checked' : ''}><span class="sw"></span><div><b>Aquecimento</b><small>${WARMUP.length} exercícios · 2 min</small></div></label>
           <label class="tg"><input type="checkbox" id="tg-cool" ${S.cool ? 'checked' : ''}><span class="sw"></span><div><b>Alongamento final</b><small>${COOLDOWN.length} exercícios · 2 min</small></div></label></div>`}
@@ -703,7 +716,7 @@ function openEx(id) {
   m.innerHTML = `<div class="modal-in" role="dialog" aria-modal="true" aria-label="${esc(e.name)}">
     <button class="icon-btn mclose" data-mclose aria-label="Fechar">${ic('x')}</button>
     <div class="mfig" data-fig="${id}"></div>
-    <span class="tag">${esc(e.group)}${e.place === 'gym' ? ' · Ginásio' : ''}</span><h2>${esc(e.name)}</h2><p class="muted">${esc(e.muscles)}</p>
+    <span class="tag">${esc(e.group)}${e.place === 'gym' ? ' · Ginásio' : ''}</span><h2>${esc(e.name)}</h2><p class="muted">${esc(e.muscles)}</p>${e.kit ? `<p class="muted small ex-kit">Precisas de: ${esc(e.kit)}</p>` : ''}
     ${hasLoad(id) && S.loads[id] ? `<div class="ex-load">${ic('dumb')}<span>Última carga <b>${kg(S.loads[id])} kg</b>${S.best[id] ? ` · recorde <b>${kg(S.best[id])} kg</b>` : ''}</span><button class="link danger sm-link" data-delbest="${id}">Apagar</button></div>` : ''}
     <h3>Como fazer</h3><ol class="cues">${e.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol>
     <div class="vars"><div><small>Mais fácil</small><p>${esc(e.easier)}</p></div><div class="hard"><small>Mais difícil</small><p>${esc(e.harder)}</p></div></div>
@@ -809,7 +822,7 @@ function say(t, force) {
 function amtSpeech(s) {
   if (s.mode === 't') return `${s.amt} segundos${s.side ? ' de cada lado' : ''}`;
   if (s.amt === 'MÁX') return 'o máximo de repetições que conseguires';
-  return `${s.amt} repetições${s.side ? ' por perna' : ''}`;
+  return `${s.amt} repetições${s.side ? ' por ' + sideW(s.ex) : ''}`;
 }
 function lineWork(s) {
   const n = EX[s.ex].name, a = amtSpeech(s);
@@ -843,7 +856,7 @@ function startWorkout(id) {
     for (let s = 0; s < it.sets; s++) {
       steps.push({ k: 'work', ...it, r: 0, i, set: s });
       const lastSet = s === it.sets - 1, lastEx = i === p.items.length - 1;
-      if (!(lastSet && lastEx)) steps.push({ k: 'rest', dur: lastSet ? p.rr : p.rest, r: 0, i, set: s, exEnd: lastSet });
+      if (!(lastSet && lastEx)) steps.push({ k: 'rest', dur: lastSet ? Math.max(p.rr, it.rest) : it.rest, r: 0, i, set: s, exEnd: lastSet });
     }
   });
   else for (let r = 0; r < p.rounds; r++) p.items.forEach((it, i) => {
@@ -924,7 +937,7 @@ function drawPlayer() {
       <div class="pl-info"><span class="eyebrow">${esc(e.muscles)}</span><h2>${esc(e.name)}</h2>
       ${s.mode === 't' ? `<div class="pl-big"><span id="pl-num">${fmt(P.left)}</span><small>segundos${s.side ? ' · troca a meio' : ''}</small></div>
          <div class="pl-bar" id="pl-ring" style="--p:1"><i></i></div>`
-        : `<div class="pl-big"><span id="pl-num">${s.amt === 'MÁX' ? 'MÁX' : s.amt}</span><small>${s.amt === 'MÁX' ? 'reps até à falha' : 'repetições'}${s.side ? ' por perna' : ''}</small><span class="pl-time">${ic('clock')}<b id="pl-time">${fmt(P.left).includes(':') ? fmt(P.left) : '0:' + fmt(P.left).padStart(2, '0')}</b></span></div>
+        : `<div class="pl-big"><span id="pl-num">${s.amt === 'MÁX' ? 'MÁX' : s.amt}</span><small>${s.amt === 'MÁX' ? 'reps até à falha' : 'repetições'}${s.side ? ' por ' + sideW(s.ex) : ''}</small><span class="pl-time">${ic('clock')}<b id="pl-time">${fmt(P.left).includes(':') ? fmt(P.left) : '0:' + fmt(P.left).padStart(2, '0')}</b></span></div>
          <div class="pl-bar" id="pl-ring" style="--p:1"><i></i></div><small class="pl-hint">Acabaste antes do tempo? Carrega em <b>Feito</b>.</small>`}
       ${s.sets ? `<div class="setdots">${Array.from({ length: s.sets }, (_, j) => `<span class="${j < s.set ? 'd' : j === s.set ? 'c' : ''}"></span>`).join('')}<small>Série ${s.set + 1} de ${s.sets}</small></div>` : ''}
       ${s.sets && hasLoad(s.ex) ? loadBox(s.ex) : `<p class="pl-cue">${esc(e.cues[0])}</p>`}</div>
