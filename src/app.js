@@ -115,11 +115,17 @@ function plan(w, L = lvl()) {
 }
 const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.side ? ' / perna' : '')}${hasLoad(i.ex) && S.loads[i.ex] ? ` · ${kg(S.loads[i.ex])} kg` : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / perna' : ''}`);
 
+/* dias de descanso e de mobilidade do plano não quebram a sequência (mas também não contam) */
+function restOk(d) { const pd = myPlan()[d.getDay()]; const w = pd && pd.w ? WMAP[pd.w] : null; return !w || w.id === 'mobility' || w.cat === 'Mobilidade'; }
 function streak() {
-  const days = new Set(S.history.map(h => h.d));
+  if (!S.history.length) return 0;
+  const days = new Set(S.history.map(h => h.d)), first = S.history.reduce((m, h) => h.d < m ? h.d : m, '9999');
   let n = 0; const d = new Date();
   if (!days.has(dkey(d))) d.setDate(d.getDate() - 1);
-  while (days.has(dkey(d))) { n++; d.setDate(d.getDate() - 1); }
+  while (dkey(d) >= first) {
+    if (days.has(dkey(d))) n++; else if (!restOk(d)) break;
+    d.setDate(d.getDate() - 1);
+  }
   return n;
 }
 function weekDays() { // segunda a domingo da semana atual
@@ -234,12 +240,13 @@ function animClose(el, cls, done) {
   if (RM) return done();
   el.classList.add(cls); setTimeout(() => { el.classList.remove(cls); done(); }, 220);
 }
-function confetti() {
+function confetti(o = {}) {
   if (RM) return;
   const c = document.createElement('canvas'); c.className = 'confetti'; document.body.appendChild(c);
   const dpr = window.devicePixelRatio || 1, W = c.width = innerWidth * dpr, H = c.height = innerHeight * dpr, x = c.getContext('2d');
-  const cols = ['#d6f53d', '#f1f4e8', '#a8c92a', '#ffffff', '#eaff8a'];
-  const P = Array.from({ length: 140 }, () => ({ x: W / 2 + (Math.random() - .5) * W * .3, y: H * .35, vx: (Math.random() - .5) * 18 * dpr, vy: (-Math.random() * 16 - 6) * dpr,
+  const cols = o.cols || ['#d6f53d', '#f1f4e8', '#a8c92a', '#ffffff', '#eaff8a'];
+  const ox = (o.x != null ? o.x : innerWidth / 2) * dpr, oy = (o.y != null ? o.y : innerHeight * .35) * dpr;
+  const P = Array.from({ length: 140 }, () => ({ x: ox + (Math.random() - .5) * 60 * dpr, y: oy, vx: (Math.random() - .5) * 18 * dpr, vy: (-Math.random() * 16 - 6) * dpr,
     r: (4 + Math.random() * 5) * dpr, a: Math.random() * 6, va: (Math.random() - .5) * .3, c: cols[Math.floor(Math.random() * cols.length)] }));
   const t0 = performance.now();
   (function f(now) {
@@ -389,8 +396,11 @@ function accountLine() {
 }
 /* ===== Medalhas & conquistas ===== */
 function maxStreak() {
-  const ds = [...new Set(S.history.map(h => h.d))].sort(); let best = 0, cur = 0, prev = null;
-  for (const d of ds) { const t = new Date(d + 'T12:00'); cur = prev && (t - prev) / 864e5 < 1.5 ? cur + 1 : 1; best = Math.max(best, cur); prev = t; }
+  const ds = [...new Set(S.history.map(h => h.d))].sort(); if (!ds.length) return 0;
+  const set = new Set(ds); let best = 0, cur = 0;
+  for (const t = new Date(ds[0] + 'T12:00'), end = ds[ds.length - 1]; dkey(t) <= end; t.setDate(t.getDate() + 1)) {
+    if (set.has(dkey(t))) { cur++; best = Math.max(best, cur); } else if (!restOk(t)) cur = 0;
+  }
   return best;
 }
 function perfectWeeks() {
@@ -501,19 +511,27 @@ const VIEWS = {
   plano() {
     const td = new Date().getDay();
     const order = [1, 2, 3, 4, 5, 6, 0];
+    /* semana atual (segunda a domingo): o que já foi feito; recomeça sozinho todas as segundas */
+    const mon = new Date(); mon.setHours(12, 0, 0, 0); mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
+    const wkDate = d => { const t = new Date(mon); t.setDate(mon.getDate() + order.indexOf(d)); return dkey(t); };
+    const doneOn = d => S.history.filter(h => h.d === wkDate(d));
+    const planned = order.filter(d => { const w = WMAP[myPlan()[d].w]; return w && w.id !== 'mobility' && w.cat !== 'Mobilidade'; }).length;
+    const doneDays = order.filter(d => doneOn(d).length).length;
+    const doneTag = d => { const hs = doneOn(d); if (!hs.length) return ''; const w = WMAP[hs[hs.length - 1].w]; return `<span class="p-done">${ic('check')} Feito${w && w.id !== (myPlan()[d].w || 'mobility') ? ' · ' + esc(w.name) : ''}</span>`; };
     return `
     <header class="top"><div><h1>Plano semanal</h1><p class="muted">${isGym() ? 'Push, pull, pernas, parte de cima e corpo inteiro: cada músculo 2× por semana, com descanso ativo pelo meio.' : 'Divisão para ganhar massa e definir: cada músculo 2× por semana, com 1 dia de recuperação.'}</p></div></header>
     ${modeSwitch()}
     ${planEdit ? planEditor() : `<div class="sec-h"><h3>A tua semana</h3><button class="btn ghost sm edit-plan" data-planedit>${ic('edit')} Editar plano</button></div>
     ${S.plans && S.plans[S.mode] ? '<p class="muted small plan-custom">Plano personalizado por ti.</p>' : ''}
+    <div class="wk-prog"><div class="wk-t"><b>Esta semana</b><span><b>${doneDays}</b>/${planned} treino${planned === 1 ? '' : 's'}</span></div><div class="mini-bar"><i style="width:${planned ? Math.min(100, doneDays / planned * 100) : 0}%"></i></div><small class="muted">Recomeça todas as segundas-feiras.</small></div>
     <div class="list plan">${order.map(d => {
-      const pd = myPlan()[d];
-      if (!pd.w) return `<div class="plan-row rest ${d === td ? 'now' : ''}"><span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span><span class="pinfo"><span class="eyebrow">Descanso</span><b>Dia de descanso</b><small>Recupera. Se quiseres, faz a Mobilidade.</small></span><button class="round-btn ghost-rb" data-open="mobility" aria-label="Ver mobilidade">${ic('next')}</button></div>`;
+      const pd = myPlan()[d], dn = doneOn(d).length ? 'done' : '';
+      if (!pd.w) return `<div class="plan-row rest ${dn} ${d === td ? 'now' : ''}"><span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span><span class="pinfo"><span class="eyebrow">Descanso</span><b>Dia de descanso</b><small>Recupera. Se quiseres, faz a Mobilidade.</small>${doneTag(d)}</span><button class="round-btn ghost-rb" data-open="mobility" aria-label="Ver mobilidade">${ic('next')}</button></div>`;
       const w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null;
-      return `<div class="plan-row ${d === td ? 'now' : ''}">
+      return `<div class="plan-row ${dn} ${d === td ? 'now' : ''}">
         <button class="plan-open" data-open="${w.id}" aria-label="Ver detalhes de ${esc(w.name)}">
           <span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span>
-          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small><span class="p-more">Ver detalhes ›</span></span>
+          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${doneTag(d) || '<span class="p-more">Ver detalhes ›</span>'}</span>
         </button>
         <button class="round-btn" data-start="${w.id}" aria-label="Começar ${esc(w.name)}">${ic('play')}</button>
         ${x ? `<button class="plan-extra" data-open="${x.id}"><span>+ ${esc(x.name)}</span><small>${plan(x).min} min ›</small></button>` : ''}
@@ -954,15 +972,44 @@ function finish() {
   const fresh = achievements().filter(a => a.done && !S.unlocked.includes(a.id));
   fresh.forEach(a => S.unlocked.push(a.id)); save();
   beep(1046, .15); setTimeout(() => beep(1318, .3), 160); say(pick(['Treino terminado! Mandaste muito bem.', 'Acabou! Excelente trabalho hoje.', 'Parabéns, treino feito! Cada dia conta.']) + (fresh.length ? ` E desbloqueaste ${fresh.length > 1 ? fresh.length + ' medalhas novas' : 'a medalha ' + fresh[0].name}!` : ''));
-  const n = PL.workCount, prs = PL.prs;
-  $('#player').innerHTML = `<div class="pl-in fin"><div class="fin-card on-lime">
-    <div class="fin-check">${ic('check')}</div><h2>Parabéns!</h2><p>Terminaste <b>${esc(PL.w.name)}</b>. Continua assim, a constância é o que te vai definir.</p>
-    <div class="fin-stats"><div><b>${min}</b><small>minutos</small></div><div><b>${n}</b><small>séries</small></div><div><b>~${kcal}</b><small>kcal</small></div></div>
-    ${prs.length ? `<div class="fin-pr">${ic('trophy')}<span>${prs.length > 1 ? prs.length + ' recordes novos' : 'Recorde novo'}: ${prs.map(x => esc(EX[x].name) + ' ' + kg(S.best[x]) + ' kg').join(', ')}</span></div>` : ''}
-    <button class="btn dark full" data-endclose>Fechar</button></div>
-    ${fresh.length ? `<div class="newach"><span class="eyebrow">${fresh.length > 1 ? 'Novas medalhas' : 'Nova medalha'} desbloqueada${fresh.length > 1 ? 's' : ''}</span>${fresh.map(a => `<div class="na">${medal(a)}<div><b>${esc(a.name)}</b><small>${esc(a.desc)}</small></div></div>`).join('')}</div>` : ''}
-    <p class="muted small center">Agora: proteína nas próximas horas e 7–9 h de sono.</p></div>`;
-  releaseWake(); PL = null; confetti();
+  const n = PL.workCount, prs = PL.prs, stk = streak(), wname = PL.w.name;
+  const word = 'Parabéns!';
+  const letters = [...word].map((ch, i) => `<span style="--l:${i}">${ch}</span>`).join('');
+  const dstr = (s => s.charAt(0).toUpperCase() + s.slice(1))(new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }));
+  const stat = (v, lbl, pre = '') => `<div class="f-st"><b>${pre}<span data-to="${v}">${RM ? v : 0}</span></b><small>${lbl}</small></div>`;
+  let k = 0; const nx = () => `style="--d:${k++}"`;
+  $('#player').innerHTML = `<div class="fin2" role="dialog" aria-modal="true" aria-label="Treino concluído">
+    <div class="f-rays" aria-hidden="true"></div>
+    <div class="f-in">
+      <div class="f-top"><span class="f-eye">Treino concluído</span><span class="f-date">${esc(dstr)}</span></div>
+      <div class="f-hero">
+        <div class="f-ring" aria-hidden="true">
+          <i class="f-pulse"></i><i class="f-pulse p2"></i>
+          <svg viewBox="0 0 160 160"><circle class="trk" cx="80" cy="80" r="70"/><circle class="arc" cx="80" cy="80" r="70"/></svg>
+          <div class="f-disk"><svg viewBox="0 0 48 48"><path d="M13 25l8 8 15-17"/></svg></div>
+        </div>
+        <h1 class="f-h" aria-label="${word}">${letters}</h1>
+        <p class="f-sub f-up" ${nx()}>Terminaste <b>${esc(wname)}</b>.<br>A constância é o que te vai definir.</p>
+      </div>
+      <div class="f-stats f-up" ${nx()}>${stat(min, 'minutos')}${stat(n, n === 1 ? 'série' : 'séries')}${stat(kcal, 'kcal', '~')}</div>
+      ${stk > 1 ? `<div class="f-chip f-up" ${nx()}>${ic('fire')}<span><b>${stk} dias seguidos</b> a treinar</span></div>` : ''}
+      ${prs.length ? `<div class="f-chip f-up" ${nx()}>${ic('trophy')}<span><b>${prs.length > 1 ? prs.length + ' recordes novos' : 'Recorde novo'}</b> · ${prs.map(x => esc(EX[x].name) + ' ' + kg(S.best[x]) + ' kg').join(', ')}</span></div>` : ''}
+      ${fresh.length ? `<div class="f-ach f-up" ${nx()}><span class="f-eye">${fresh.length > 1 ? 'Novas medalhas' : 'Nova medalha'}</span>${fresh.map(a => `<div class="na">${medal(a)}<div><b>${esc(a.name)}</b><small>${esc(a.desc)}</small></div></div>`).join('')}</div>` : ''}
+      <div class="f-foot f-up" ${nx()}><p>Agora: proteína nas próximas horas e 7–9 h de sono.</p><button class="btn dark full" data-endclose>Fechar</button></div>
+    </div>
+  </div>`;
+  releaseWake(); PL = null;
+  try { navigator.vibrate && navigator.vibrate([30, 60, 40]); } catch (e) {}
+  if (!RM) {
+    setTimeout(() => {
+      const r = $('#player .f-ring'); const b = r && r.getBoundingClientRect();
+      confetti({ cols: ['#141900', '#ffffff', '#3d4a00', '#f6ffd0'], x: b ? b.left + b.width / 2 : innerWidth / 2, y: b ? b.top + b.height / 2 : innerHeight * .35 });
+    }, 1250);
+    setTimeout(() => document.querySelectorAll('#player [data-to]').forEach(el => {
+      const to = +el.dataset.to, t0 = performance.now(), D = 900;
+      (function f(now) { const p = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(to * e); if (p < 1) requestAnimationFrame(f); })(t0);
+    }), 1350);
+  }
 }
 /* ecrã sempre ligado durante o treino: Wake Lock API e, como reserva (iPhone mais antigo / app no ecrã principal), um vídeo mudo em ciclo */
 const NOSLEEP_MP4 = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMvbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAll0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAABAAAAAQAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHRbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABfG1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAATxzdGJsAAAAvHN0c2QAAAAAAAAAAQAAAKxhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAABAAEABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAMmF2Y0MBZAAK/+EAF2dkAAqs2V7ARAAAAwAEAAADAAg8SJZYAQAEaO+Py/34+AAAAAAQcGFzcAAAAAEAAAABAAAAFGJ0cnQAAAAAAAALSAAAC0gAAAAYc3R0cwAAAAAAAAABAAAAAgAAQAAAAAAUc3RzcwAAAAAAAAABAAAAAQAAABxzdHNjAAAAAAAAAAEAAAABAAAAAgAAAAEAAAAcc3RzegAAAAAAAAAAAAAAAgAAAsYAAAAMAAAAFHN0Y28AAAAAAAAAAQAAA18AAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYwLjE2LjEwMAAAAAhmcmVlAAAC2m1kYXQAAAKsBgX//6jcRem95tlIt5Ys2CDZI+7veDI2NCAtIGNvcmUgMTY0IHIzMTA4IDMxZTE5ZjkgLSBILjI2NC9NUEVHLTQgQVZDIGNvZGVjIC0gQ29weWxlZnQgMjAwMy0yMDIzIC0gaHR0cDovL3d3dy52aWRlb2xhbi5vcmcveDI2NC5odG1sIC0gb3B0aW9uczogY2FiYWM9MSByZWY9MSBkZWJsb2NrPTE6MDowIGFuYWx5c2U9MHgzOjB4MTEzIG1lPWhleCBzdWJtZT0yIHBzeT0xIHBzeV9yZD0xLjAwOjAuMDAgbWl4ZWRfcmVmPTAgbWVfcmFuZ2U9MTYgY2hyb21hX21lPTEgdHJlbGxpcz0wIDh4OGRjdD0xIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PTAgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MyBiX3B5cmFtaWQ9MiBiX2FkYXB0PTEgYl9iaWFzPTAgZGlyZWN0PTEgd2VpZ2h0Yj0xIG9wZW5fZ29wPTAgd2VpZ2h0cD0xIGtleWludD0yNTAga2V5aW50X21pbj0xIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9MTAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAEmWIhAAW/+x/wlV/0QKRHm1/8QAAAAhBmiEYgr/+8A==';

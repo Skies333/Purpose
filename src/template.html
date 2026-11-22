@@ -656,6 +656,69 @@ body.noselect{user-select:none;-webkit-user-select:none}
 .pk-rest{display:grid;place-items:center}.pk-rest .ic{color:var(--muted)}
 .pk-t{flex:1;display:flex;flex-direction:column;min-width:0}
 .pk-t small{color:var(--muted);font-size:12.5px}
+/* plano: semana atual */
+.wk-prog{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;margin-bottom:10px}
+.wk-t{display:flex;justify-content:space-between;align-items:baseline}
+.wk-t span{color:var(--muted);font-size:14px}.wk-t span b{color:var(--lime);font-family:var(--display);font-size:20px}
+.p-done{display:inline-flex;align-items:center;gap:5px;margin-top:5px;align-self:flex-start;background:rgba(214,245,61,.14);color:var(--lime);font-size:12px;font-weight:700;padding:4px 10px 4px 7px;border-radius:99px}
+.p-done .ic{width:14px;height:14px;stroke-width:3}
+.plan-row.done .pday b{color:var(--lime)}
+.plan-row.done:not(.now){border-color:rgba(214,245,61,.28)}
+/* ===== Ecrã de fim de treino (ecrã inteiro) ===== */
+#player:has(.fin2){background:var(--lime)}
+.fin2{position:relative;min-height:100%;background:var(--lime);color:var(--lime-ink);overflow:hidden;isolation:isolate;
+  clip-path:circle(150% at 50% 32%);animation:fWipe .75s cubic-bezier(.7,0,.2,1) both}
+@keyframes fWipe{from{clip-path:circle(0% at 50% 32%)}to{clip-path:circle(150% at 50% 32%)}}
+.f-rays{position:absolute;left:50%;top:32vh;width:260vmax;height:260vmax;margin:-130vmax 0 0 -130vmax;z-index:-1;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg,rgba(20,25,0,.055) 0 6deg,transparent 6deg 18deg);
+  -webkit-mask:radial-gradient(closest-side,#000 8%,transparent 60%);mask:radial-gradient(closest-side,#000 8%,transparent 60%);
+  animation:fRaysIn 1.2s .5s ease both,fSpin 60s linear infinite}
+@keyframes fRaysIn{from{opacity:0}to{opacity:1}}
+@keyframes fSpin{to{transform:rotate(360deg)}}
+.f-in{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;gap:16px;
+  padding:calc(18px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom))}
+.f-top{display:flex;justify-content:space-between;align-items:center;gap:10px;animation:fUp .5s .55s cubic-bezier(.2,.8,.2,1) both}
+.f-eye{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.f-date{font-size:13px;font-weight:600;opacity:.65}
+.f-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:10px 0 4px}
+.f-ring{position:relative;width:176px;height:176px;display:grid;place-items:center;margin-bottom:6px;animation:fPop .7s .35s cubic-bezier(.2,.9,.3,1.25) both}
+.f-ring>svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.f-ring circle{fill:none;stroke-width:9;stroke-linecap:round}
+.f-ring .trk{stroke:rgba(20,25,0,.12)}
+.f-ring .arc{stroke:var(--lime-ink);stroke-dasharray:440;stroke-dashoffset:440;animation:fArc .85s .5s cubic-bezier(.6,0,.2,1) forwards}
+@keyframes fArc{to{stroke-dashoffset:0}}
+.f-disk{width:118px;height:118px;border-radius:50%;background:var(--lime-ink);display:grid;place-items:center;transform:scale(0);animation:fPop .55s 1.15s cubic-bezier(.2,.9,.3,1.45) forwards}
+.f-disk svg{width:62px;height:62px;fill:none;stroke:var(--lime);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.f-disk path{stroke-dasharray:40;stroke-dashoffset:40;animation:fDraw .45s 1.4s ease-out forwards}
+@keyframes fDraw{to{stroke-dashoffset:0}}
+.f-pulse{position:absolute;inset:0;border-radius:50%;border:2px solid var(--lime-ink);opacity:0;animation:fPulse 1.6s 1.35s cubic-bezier(.2,.7,.3,1) 2}
+.f-pulse.p2{animation-delay:1.6s}
+@keyframes fPulse{0%{transform:scale(1);opacity:.45}100%{transform:scale(1.75);opacity:0}}
+@keyframes fPop{from{transform:scale(0)}to{transform:scale(1)}}
+.f-h{font-family:var(--display);font-size:clamp(52px,15vw,76px);font-weight:800;letter-spacing:-.04em;line-height:1;display:flex;overflow:hidden;padding:.06em .02em .1em}
+.f-h span{display:inline-block;transform:translateY(115%) rotate(8deg);animation:fLetter .7s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(1.05s + var(--l)*45ms)}
+@keyframes fLetter{to{transform:none}}
+.f-sub{font-size:15.5px;line-height:1.45;opacity:.8;max-width:30ch}
+.f-up{animation:fUp .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(1.35s + var(--d,0)*.1s)}
+@keyframes fUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.f-stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1.5px solid rgba(20,25,0,.16);border-bottom:1.5px solid rgba(20,25,0,.16)}
+.f-st{padding:16px 4px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.f-st+.f-st{border-left:1.5px solid rgba(20,25,0,.16)}
+.f-st b{font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.05}
+.f-st small{font-size:12.5px;font-weight:700;opacity:.65}
+.f-chip{display:flex;align-items:center;gap:12px;background:var(--lime-ink);color:var(--lime);border-radius:18px;padding:13px 16px;font-size:14px;line-height:1.35}
+.f-chip b{color:#fff}
+.f-chip .ic{width:22px;height:22px;flex:none}
+.f-ach{background:var(--lime-ink);color:var(--ink);border-radius:22px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.f-ach .f-eye{color:var(--lime)}
+.f-ach .na{display:flex;align-items:center;gap:12px}
+.f-ach .na .medal{animation:fPop .6s 1.9s cubic-bezier(.2,.9,.3,1.4) both}
+.f-ach small{display:block;color:var(--muted);font-size:12.5px}
+.f-foot{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.f-foot p{font-size:13px;text-align:center;opacity:.65;font-weight:600}
+.f-foot .btn{padding:17px;font-size:16px}
+@media (prefers-reduced-motion:reduce){.fin2,.fin2 *{animation:none!important}.f-ring .arc{stroke-dashoffset:0}.f-disk{transform:none}.f-disk path{stroke-dashoffset:0}.f-h span{transform:none}}
+
 /* ===== Animações ===== */
 @keyframes swapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .swap{animation:swapIn .34s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--k,0)*35ms)}
