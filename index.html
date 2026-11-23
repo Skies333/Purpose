@@ -2005,7 +2005,7 @@ const myPlan = () => {
 };
 const planDay = d => { const pd = myPlan()[d]; return pd.w ? pd : { w: 'mobility', focus: 'Dia de descanso', rest: true }; };
 const ZONE_FIG_GYM = { 'Corpo inteiro': 'deadlift', 'Parte de cima': 'barrow', 'Peito & Tríceps': 'bench', 'Costas & Bíceps': 'pulldown', 'Ombros & Braços': 'lateralraise', 'Pernas': 'legpress', 'Core': 'abwheel' };
-const kitOf = w => { const k = [...new Set(w.items.map(i => EX[i[0]].kit).filter(Boolean))]; return k.length ? k.join(', ').replace(/^./, c => c.toUpperCase()) : 'Nenhum'; };
+const kitOf = w => { const k = [...new Set(w.items.flatMap(i => (EX[i[0]].kit || '').split(', ')).filter(Boolean))]; return k.length ? k.join(', ').replace(/^./, c => c.toUpperCase()) : 'Nenhum'; };
 const hasLoad = id => EX[id].place === 'gym' && !BODYWEIGHT.includes(id);
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
