@@ -53,6 +53,7 @@ const IC = {
   dumb: '<path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/>',
   house: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l5-5-5-5M15 12H4"/>',
   refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
@@ -754,7 +755,7 @@ function openEx(id) {
   </div>`;
   m.hidden = false; document.body.classList.add('mlock'); makeFigure($('.mfig', m), id);
 }
-function closeEx() { const m = $('#modal'); if (m.hidden) return; document.body.classList.remove('mlock'); animClose(m, 'modal-close', () => { m.hidden = true; m.innerHTML = ''; }); }
+function closeEx() { const m = $('#modal'); if (m.hidden) return; if (typeof PL !== 'undefined' && PL && PL.autoPause) { PL.autoPause = false; PL.paused = false; PL.last = performance.now(); drawPlayer(); } document.body.classList.remove('mlock'); animClose(m, 'modal-close', () => { m.hidden = true; m.innerHTML = ''; }); }
 
 /* ===== Player ===== */
 let PL = null, AC = null, wakeLock = null;
@@ -998,14 +999,14 @@ function drawPlayer() {
   if (s.k === 'work') {
     const e = EX[s.ex];
     body = `<div class="pl-stage" data-fig="${s.ex}"></div>
-      <div class="pl-info"><span class="eyebrow">${esc(e.muscles)}</span><h2>${esc(e.name)}</h2>
+      <div class="pl-info"><span class="eyebrow">${esc(e.muscles)}</span><div class="pl-name"><h2>${esc(e.name)}</h2><button class="pl-how" data-exinfo="${s.ex}" aria-label="Como fazer ${esc(e.name)}">${ic('info')}<span>Como fazer</span></button></div>
       ${s.mode === 't' ? `<div class="pl-big"><span id="pl-num">${fmt(P.left)}</span><small>segundos${s.side ? ' · troca a meio' : ''}</small></div>
          <div class="pl-bar" id="pl-ring" style="--p:1"><i></i></div>`
         : `<div class="pl-big"><span id="pl-num">${s.amt === 'MÁX' ? 'MÁX' : s.amt}</span><small>${s.amt === 'MÁX' ? 'reps até à falha' : 'repetições'}${s.side ? ' por ' + sideW(s.ex) : ''}</small></div>
          <small class="pl-hint">Quando acabares, carrega em <b>Feito</b>.</small>`}
       ${s.sets ? `<div class="setdots">${Array.from({ length: s.sets }, (_, j) => `<span class="${j < s.set ? 'd' : j === s.set ? 'c' : ''}"></span>`).join('')}<small>Série ${s.set + 1} de ${s.sets}</small></div>` : ''}
       ${s.st ? `<p class="pl-stage-tag">${ic('bolt')}<span>Etapa ${s.st + 1}: ${esc(STAGE_TXT(s.ex, s.st))}</span></p>` : ''}
-      ${s.sets && hasLoad(s.ex) ? loadBox(s.ex) : `<p class="pl-cue">${esc(e.cues[0])}</p>`}</div>
+      ${s.sets && hasLoad(s.ex) ? loadBox(s.ex) : ''}<ol class="pl-cues">${e.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol></div>
       <div class="pl-ctrl"><button class="btn ghost" data-prev>${ic('back')} Anterior</button>
         ${s.mode === 'r' ? `<button class="btn lime" data-next>${ic('check')} Feito</button>` : `<button class="btn lime" data-pause>${P.paused ? ic('play') + ' Retomar' : ic('pause') + ' Pausa'}</button>`}
       </div>${skipPhase || '<button class="link skip" data-skip>Passar exercício</button>'}`;
@@ -1150,7 +1151,7 @@ document.addEventListener('click', ev => {
   if (d.open) return openWorkout(d.open);
   if (d.start) return startWorkout(d.start);
   if (d.ex) return openEx(d.ex);
-  if (d.exinfo) { if (PL) PL.paused = true; drawPlayer(); return openEx(d.exinfo); }
+  if (d.exinfo) { if (PL && !PL.paused) { PL.paused = true; PL.autoPause = true; drawPlayer(); } return openEx(d.exinfo); }
   if (d.cat !== undefined) { filterCat = d.cat; libTab = 'treinos'; return go('treinos'); }
   if (d.filter) { filterCat = d.filter; return softRender('.chipbar'); }
   if (d.tab) { libTab = d.tab; return softRender('.utabs'); }
