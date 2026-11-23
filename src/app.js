@@ -102,7 +102,7 @@ function repTop(id, base, mode) {
   if (isGymEx(id)) return base + (base <= 6 ? 2 : base <= 10 ? 3 : 4);
   return base + Math.max(3, Math.round(base * .5));
 }
-const progTarget = (id, base, mode) => Math.min(repTop(id, base, mode), base + (progOf(id).dt || 0));
+const progTarget = (id, base) => base;
 const STAGE_TXT = (id, st) => st === 1 ? 'Desce em 3 segundos em cada repetição' : st >= 2 ? (EX[id].harder || 'Versão mais difícil') : '';
 /* sessões de core e mobilidade não levam aquecimento nem alongamento automáticos (são feitas a seguir ao treino ou em dias leves) */
 const noExtras = w => w.cat === 'Core' || w.cat === 'Mobilidade';
@@ -134,7 +134,7 @@ function plan(w, L = lvl()) {
   const items = w.items.map(i => scaled(i, L, w.place !== 'gym'));
   items.forEach(i => {
     if (i.sets && !i.rest) i.rest = rest;
-    if (i.sets && i.amt !== 'MÁX') { i.base = i.amt; i.amt = progTarget(i.ex, i.base, i.mode); i.top = repTop(i.ex, i.base, i.mode); i.st = isGymEx(i.ex) ? 0 : (progOf(i.ex).st || 0); }
+    if (i.sets && i.amt !== 'MÁX') { i.base = i.amt; i.amt = progTarget(i.ex, i.base, i.mode); i.top = repTop(i.ex, i.base, i.mode); i.st = 0; }
   });
   let sec = 0;
   if (w.mode === 'sets') {
@@ -152,7 +152,7 @@ function plan(w, L = lvl()) {
 }
 /* "por perna" nas pernas e glúteos, "por lado" no resto (braços, core, mobilidade) */
 const sideW = ex => ['Pernas', 'Glúteos'].includes(EX[ex].group) ? 'perna' : 'lado';
-const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.mode === 't' ? ' s' : '') + (i.side ? ' / ' + sideW(i.ex) : '')}${hasLoad(i.ex) && (progOf(i.ex).sug || S.loads[i.ex]) ? ` · ${kg(progOf(i.ex).sug || S.loads[i.ex])} kg` : ''}${i.st === 1 ? ' · descida lenta' : i.st >= 2 ? ' · versão difícil' : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / ' + sideW(i.ex) : ''}`);
+const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.mode === 't' ? ' s' : '') + (i.side ? ' / ' + sideW(i.ex) : '')}${hasLoad(i.ex) && S.loads[i.ex] ? ` · ${kg(S.loads[i.ex])} kg` : ''}${i.st === 1 ? ' · descida lenta' : i.st >= 2 ? ' · versão difícil' : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / ' + sideW(i.ex) : ''}`);
 
 /* dias de descanso e de mobilidade do plano não quebram a sequência (mas também não contam) */
 function restOk(d) { const pd = myPlan()[d.getDay()]; const w = pd && pd.w ? WMAP[pd.w] : null; return !w || w.id === 'mobility' || w.cat === 'Mobilidade'; }
@@ -951,8 +951,7 @@ function enter(i) {
   if (PL.steps[PL.idx] && i > PL.idx) countDone();
   if (i >= PL.steps.length) return finish();
   PL.idx = i; const s = PL.steps[i];
-  if (s.k === 'work' && s.mode === 'r') s.tdur = repTime(s);
-  PL.left = s.k === 'work' ? (s.mode === 't' ? s.amt * (s.side ? 2 : 1) : s.tdur) : s.dur; PL.el = 0; PL.beeped = {};
+  PL.left = s.k === 'work' ? (s.mode === 't' ? s.amt * (s.side ? 2 : 1) : Infinity) : s.dur; PL.el = 0; PL.beeped = {};
   drawPlayer();
   const nx = PL.steps[nextWorkIdx(i)];
   if (s.k === 'work') { const late = PL.chimeAt && performance.now() - PL.chimeAt < 1200; late ? setTimeout(() => beep(1046, .25), 900) : beep(1046, .25); say(s.phase ? `${EX[s.ex].name}. ${s.amt * (s.side ? 2 : 1)} segundos${s.side ? ', troca de lado a meio' : ''}. ${s.phase === 'warm' ? pick(['Com calma, só para aquecer.', 'Ritmo leve.', 'Solta o corpo.']) : pick(['Respira fundo e relaxa.', 'Devagar, sem forçar.', 'Deixa o corpo soltar.'])}` : lineWork(s)); }
@@ -980,7 +979,7 @@ function tick() {
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s); };
 function updT() {
   const s = PL.steps[PL.idx], n = $('#pl-num'); if (!n) return;
-  if (s.k === 'work' && s.mode === 'r') { const t = $('#pl-time'), v = fmt(PL.left); if (t && t.textContent !== v) t.textContent = v.includes(':') ? v : '0:' + v.padStart(2, '0'); }
+  if (s.k === 'work' && s.mode === 'r') return;
   else { const v = fmt(PL.left); if (n.textContent !== v) { n.textContent = v; if (!RM) { n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } } }
   const bar = $('#pl-ring'); if (bar) { const tot = s.k === 'work' ? (s.mode === 'r' ? s.tdur : s.amt * (s.side ? 2 : 1)) : s.dur; bar.style.setProperty('--p', Math.max(0, PL.left / tot)); }
 }
@@ -1002,15 +1001,13 @@ function drawPlayer() {
       <div class="pl-info"><span class="eyebrow">${esc(e.muscles)}</span><h2>${esc(e.name)}</h2>
       ${s.mode === 't' ? `<div class="pl-big"><span id="pl-num">${fmt(P.left)}</span><small>segundos${s.side ? ' · troca a meio' : ''}</small></div>
          <div class="pl-bar" id="pl-ring" style="--p:1"><i></i></div>`
-        : `<div class="pl-big"><span id="pl-num">${s.amt === 'MÁX' ? 'MÁX' : s.amt}</span><small>${s.amt === 'MÁX' ? 'reps até à falha' : 'repetições'}${s.side ? ' por ' + sideW(s.ex) : ''}</small><span class="pl-time">${ic('clock')}<b id="pl-time">${fmt(P.left).includes(':') ? fmt(P.left) : '0:' + fmt(P.left).padStart(2, '0')}</b></span></div>
-         <div class="pl-bar" id="pl-ring" style="--p:1"><i></i></div><small class="pl-hint">Acabaste antes do tempo? Carrega em <b>Feito</b>.</small>`}
+        : `<div class="pl-big"><span id="pl-num">${s.amt === 'MÁX' ? 'MÁX' : s.amt}</span><small>${s.amt === 'MÁX' ? 'reps até à falha' : 'repetições'}${s.side ? ' por ' + sideW(s.ex) : ''}</small></div>
+         <small class="pl-hint">Quando acabares, carrega em <b>Feito</b>.</small>`}
       ${s.sets ? `<div class="setdots">${Array.from({ length: s.sets }, (_, j) => `<span class="${j < s.set ? 'd' : j === s.set ? 'c' : ''}"></span>`).join('')}<small>Série ${s.set + 1} de ${s.sets}</small></div>` : ''}
       ${s.st ? `<p class="pl-stage-tag">${ic('bolt')}<span>Etapa ${s.st + 1}: ${esc(STAGE_TXT(s.ex, s.st))}</span></p>` : ''}
-      ${s.sets && s.mode === 'r' ? repBox(s) : ''}
       ${s.sets && hasLoad(s.ex) ? loadBox(s.ex) : `<p class="pl-cue">${esc(e.cues[0])}</p>`}</div>
       <div class="pl-ctrl"><button class="btn ghost" data-prev>${ic('back')} Anterior</button>
         ${s.mode === 'r' ? `<button class="btn lime" data-next>${ic('check')} Feito</button>` : `<button class="btn lime" data-pause>${P.paused ? ic('play') + ' Retomar' : ic('pause') + ' Pausa'}</button>`}
-        ${s.mode === 'r' ? `<button class="btn ghost span2" data-pause>${P.paused ? ic('play') + ' Retomar tempo' : ic('pause') + ' Pausar tempo'}</button>` : ''}
       </div>${skipPhase || '<button class="link skip" data-skip>Passar exercício</button>'}`;
   } else {
     const n = P.steps[nextWorkIdx(P.idx)], e = EX[n.ex];
@@ -1032,12 +1029,12 @@ function repBox(s) {
   return `<div class="repbox"><span>Quantas fizeste?${s.amt === 'MÁX' && last ? ` <small>Recorde: ${last}</small>` : ''}</span>
     <div class="rb-ctl"><button class="ld-btn sm" data-rep="-1" aria-label="Menos uma">−</button><b id="rep-v">${s.got}</b><button class="ld-btn sm" data-rep="1" aria-label="Mais uma">+</button></div></div>`;
 }
-function curLoad(id) { return PL.loads[id] ?? progOf(id).sug ?? S.loads[id] ?? null; }
+function curLoad(id) { return PL.loads[id] ?? S.loads[id] ?? null; }
 function loadBox(id) {
   const v = curLoad(id), last = S.loads[id], best = S.best[id];
   return `<div class="loadbox"><button class="ld-btn" data-load="-1" aria-label="Menos carga">−</button>
     <div class="ld-v"><label class="sr" for="ld-val">Carga em kg</label><input id="ld-val" type="text" inputmode="decimal" autocomplete="off" placeholder="—" value="${v == null ? '' : kg(v)}"><span>kg</span>
-      <small>${progOf(id).sug && progOf(id).sug !== last ? `Sugestão: ${kg(progOf(id).sug)} kg · última vez ${kg(last)} kg` : last ? `Última vez: ${kg(last)} kg${best ? ` · recorde ${kg(best)} kg` : ''}` : 'Escreve a carga que vais usar'}</small></div>
+      <small>${last ? `Última vez: ${kg(last)} kg${best ? ` · recorde ${kg(best)} kg` : ''}` : 'Escreve a carga que vais usar'}</small></div>
     <button class="ld-btn" data-load="1" aria-label="Mais carga">+</button></div>`;
 }
 function commitLoad() {
@@ -1052,7 +1049,7 @@ function finish() {
   clearInterval(PL.timer);
   const min = Math.max(1, Math.round((Date.now() - PL.t0) / 60000)), kcal = Math.round(min * PL.w.rate);
   countDone();
-  const progMsgs = applyProgress();
+  const progMsgs = [];
   for (const k in PL.done.reps) S.totals.reps[k] = (S.totals.reps[k] || 0) + PL.done.reps[k];
   for (const k in PL.done.sec) S.totals.sec[k] = (S.totals.sec[k] || 0) + PL.done.sec[k];
   S.history.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), d: today(), w: PL.w.id, min, kcal, lvl: PL.L.label, lv: PL.L.id, h: new Date().getHours() });
