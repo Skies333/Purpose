@@ -2606,10 +2606,10 @@ const VIEWS = {
       return `<div class="plan-row ${dn} ${d === td ? 'now' : ''}">
         <button class="plan-open" data-open="${w.id}" aria-label="Ver detalhes de ${esc(w.name)}">
           <span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span>
-          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${doneTag(d) || '<span class="p-more">Ver detalhes ›</span>'}</span>
+          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${doneTag(d)}</span>
         </button>
-        <button class="round-btn" data-start="${w.id}" aria-label="Começar ${esc(w.name)}">${ic('play')}</button>
-        ${x ? (() => { const px = plan(x); return `<div class="plan-x"><button class="plan-open" data-open="${x.id}" aria-label="Ver detalhes de ${esc(x.name)}"><span class="pinfo"><span class="eyebrow">2.º treino · ${esc(x.cat === 'HIIT' ? 'Cardio' : x.cat)}</span><b>${esc(x.name)}</b><small>${px.min} min · ${px.gym ? px.sets + ' séries' : px.rounds + ' voltas'}</small></span></button><button class="round-btn sm" data-start="${x.id}" aria-label="Começar ${esc(x.name)}">${ic('play')}</button></div>`; })() : ''}
+        <button class="round-btn ghost-rb" data-open="${w.id}" aria-label="Ver ${esc(w.name)}">${ic('next')}</button>
+        ${x ? (() => { const px = plan(x); return `<div class="plan-x"><button class="plan-open" data-open="${x.id}" aria-label="Ver detalhes de ${esc(x.name)}"><span class="pinfo"><span class="eyebrow">2.º treino · ${esc(x.cat === 'HIIT' ? 'Cardio' : x.cat)}</span><b>${esc(x.name)}</b><small>${px.min} min · ${px.gym ? px.sets + ' séries' : px.rounds + ' voltas'}</small></span></button><button class="round-btn ghost-rb sm" data-open="${x.id}" aria-label="Ver ${esc(x.name)}">${ic('next')}</button></div>`; })() : ''}
       </div>`;
     }).join('')}</div>`}
     <section class="card">
