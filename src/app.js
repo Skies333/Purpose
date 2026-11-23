@@ -104,6 +104,8 @@ function repTop(id, base, mode) {
 }
 const progTarget = (id, base, mode) => Math.min(repTop(id, base, mode), base + (progOf(id).dt || 0));
 const STAGE_TXT = (id, st) => st === 1 ? 'Desce em 3 segundos em cada repetição' : st >= 2 ? (EX[id].harder || 'Versão mais difícil') : '';
+/* sessões de core e mobilidade não levam aquecimento nem alongamento automáticos (são feitas a seguir ao treino ou em dias leves) */
+const noExtras = w => w.cat === 'Core' || w.cat === 'Mobilidade';
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
 function modeSwitch(compact) {
@@ -142,7 +144,7 @@ function plan(w, L = lvl()) {
   items.forEach(i => sec += (i.mode === 't' ? i.amt : (i.amt === 'MÁX' ? 15 : i.amt) * 3.2) * (i.side ? 2 : 1));
   sec = sec * rounds + rest * (items.length - 1) * rounds + rr * (rounds - 1);
   }
-  const extras = w.id === 'mobility' ? 0 : (S.warm ? WARMUP.reduce((s, x) => s + x[1], 0) : 0) + (S.cool ? COOLDOWN.reduce((s, x) => s + x[1], 0) : 0);
+  const extras = noExtras(w) ? 0 : (S.warm ? WARMUP.reduce((s, x) => s + x[1], 0) : 0) + (S.cool ? COOLDOWN.reduce((s, x) => s + x[1], 0) : 0);
   const min = Math.round((sec + extras) / 60);
   const sets = items.reduce((s, i) => s + (i.sets || rounds), 0);
   const rs = items.filter(i => i.sets).map(i => i.rest), restTxt = rs.length && Math.min(...rs) !== Math.max(...rs) ? `${Math.min(...rs)}–${Math.max(...rs)} s` : `${rs.length ? rs[0] : rest} s`;
@@ -519,7 +521,7 @@ const VIEWS = {
       return `<button class="zone" data-cat="${c}"><div class="zfig" data-fig="${(isGym() ? ZONE_FIG_GYM : ZONE_FIG)[c]}" data-phase="${i * .41}"></div><div class="ztxt"><b>${esc(c)}</b><small>${n} treino${n > 1 ? 's' : ''}</small></div><span class="zgo">${ic('next')}</span></button>`; }).join('')}</div>
 
     <div class="sec-h"><h3>Treinos populares</h3></div>
-    <div class="hscroll">${(isGym() ? ['gpush', 'gpull', 'glegs', 'glegs2', 'gupper'] : ['push', 'pull', 'legs', 'brutal', 'hiit']).map((id, i) => wCard(WMAP[id], i)).join('')}</div>
+    <div class="hscroll">${(isGym() ? ['gpush', 'gpull', 'glegs', 'gfull', 'gupperA'] : ['push', 'pull', 'legs', 'fullA', 'hiit']).map((id, i) => wCard(WMAP[id], i)).join('')}</div>
 
     <button class="card tipcard" data-go="dicas"><div><span class="eyebrow">Ganhar massa</span><h3>Calcula a tua proteína diária</h3><p class="muted">Sem comida suficiente não há músculo. Vê quanto precisas.</p></div>${ic('next', 'chev')}</button>`;
   },
@@ -561,7 +563,7 @@ const VIEWS = {
     ${modeSwitch()}
     ${planEdit ? '' : `<section class="card freq"><div class="sec-h in"><h3>Quantas vezes por semana?</h3></div>
       <div class="seg freq-seg" role="radiogroup" aria-label="Treinos por semana">${[2, 3, 4, 5, 6].map(n => `<button type="button" role="radio" aria-checked="${planFreq() === n}" class="${planFreq() === n ? 'on' : ''}" data-freq="${n}">${n}×</button>`).join('')}</div>
-      <p class="muted small">${S.plans && S.plans[S.mode] ? 'Estás a usar um plano personalizado. Escolhe um número para voltar a um plano sugerido.' : PLAN_WHY[Math.min(7, S.goal || 4)]}</p></section>`}
+      <p class="muted small">${S.plans && S.plans[S.mode] ? 'Estás a usar um plano personalizado. Escolhe um número para voltar a um plano sugerido.' : (isGym() ? PLAN_WHY_GYM : PLAN_WHY)[Math.min(7, S.goal || 4)]}</p></section>`}
     ${planEdit ? planEditor() : `<div class="sec-h"><h3>A tua semana</h3><button class="btn ghost sm edit-plan" data-planedit>${ic('edit')} Editar plano</button></div>
     ${S.plans && S.plans[S.mode] ? '<p class="muted small plan-custom">Plano personalizado por ti.</p>' : ''}
     <div class="wk-prog"><div class="wk-t"><b>Esta semana</b><span><b>${doneDays}</b>/${planned} treino${planned === 1 ? '' : 's'}</span></div><div class="mini-bar"><i style="width:${planned ? Math.min(100, doneDays / planned * 100) : 0}%"></i></div><small class="muted">Recomeça todas as segundas-feiras.</small></div>
@@ -719,7 +721,7 @@ function openWorkout(id) {
         <h3>Nível</h3>
         <div class="seg lv">${LEVELS.map(l => `<button class="${l.id === S.level ? 'on' : ''}" data-level="${l.id}">${l.label}</button>`).join('')}</div>
         <div class="facts"><div><small>${p.gym ? 'Entre séries' : 'Descanso'}</small><b>${p.gym ? p.restTxt : p.rest + ' s'}</b></div><div><small>${p.gym ? 'Entre exercícios' : 'Entre voltas'}</small><b>${p.rr} s</b></div><div><small>Equipamento</small><b>${w.place === 'gym' ? 'Ginásio' : kitOf(w)}</b></div></div>
-        ${w.id === 'mobility' ? '' : `<div class="toggles">
+        ${noExtras(w) ? '' : `<div class="toggles">
           <label class="tg"><input type="checkbox" id="tg-warm" ${S.warm ? 'checked' : ''}><span class="sw"></span><div><b>Aquecimento</b><small>${WARMUP.length} exercícios · 2 min</small></div></label>
           <label class="tg"><input type="checkbox" id="tg-cool" ${S.cool ? 'checked' : ''}><span class="sw"></span><div><b>Alongamento final</b><small>${COOLDOWN.length} exercícios · 2 min</small></div></label></div>`}
         <div class="sec-h"><h3>Exercícios</h3><span class="muted small">${p.gym ? `${p.items.length} exercícios · ${p.sets} séries` : `${p.items.length} exercícios × ${p.rounds} voltas`}</span></div>
@@ -874,7 +876,7 @@ function lineRest(s, nx) {
 }
 function startWorkout(id) {
   const w = WMAP[id], L = lvl(), p = plan(w, L);
-  const extra = w.id !== 'mobility';
+  const extra = !noExtras(w);
   const steps = [];
   if (extra && S.warm) {
     steps.push({ k: 'ready', dur: 6, label: 'Aquecimento' });

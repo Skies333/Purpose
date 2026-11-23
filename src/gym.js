@@ -163,3 +163,8 @@ Object.assign(EX, {
     cues: ['De joelhos, mãos na roda por baixo dos ombros', 'Rola para a frente com o abdominal contraído, sem afundar a lombar', 'Volta a puxar com o core'],
     easier: 'Menor amplitude ou contra uma parede', harder: 'Mais longe, até quase ao chão' },
 });
+
+/* elevações laterais em casa: garrafas de água no lugar dos halteres */
+EX.bottleraise = { ...EX.lateralraise, place: undefined, name: 'Elevações laterais com garrafas', kit: 'garrafas de água de 1,5 L',
+  cues: ['Uma garrafa de água cheia em cada mão', 'Sobe os braços de lado até à altura dos ombros, cotovelos ligeiramente fletidos', 'Desce em 3 segundos; com pouco peso, a lentidão é que faz o trabalho'],
+  easier: 'Garrafas de 0,5 L', harder: 'Mochila numa mão, um braço de cada vez' };
