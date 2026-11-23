@@ -98,6 +98,7 @@ function makeFigure(container, exId, opts = {}) {
   if (H === 'bar') { E.plate = el('circle', { r: 12, class: 'f-plate' }, eq); E.hub = el('circle', { r: 3, class: 'f-hub' }, eq); }
   if (H === 'db') { E.d2 = el('circle', { r: 6, class: 'f-plate dim' }, svg); svg.insertBefore(E.d2, body); E.d1 = el('circle', { r: 6, class: 'f-plate' }, svg); }
   if (H === 'db1') E.d1 = el('circle', { r: 6, class: 'f-plate' }, svg);
+  if (H === 'bag') E.bag = el('rect', { width: 14, height: 16, rx: 4, class: 'f-plate' }, svg);
   if (H === 'bar-front') { E.bar = el('line', { class: 'f-bar' }, eq); E.p1 = el('line', { class: 'f-platel' }, eq); E.p2 = el('line', { class: 'f-platel' }, eq); }
   if (H === 'db-front') { E.d1 = el('line', { class: 'f-platel sm' }, svg); E.d2 = el('line', { class: 'f-platel sm' }, svg); }
   if (ex.sled) E.sled = el('line', { class: 'f-bar thick' }, eq);
@@ -150,6 +151,7 @@ function makeFigure(container, exId, opts = {}) {
       if (E.plate) { for (const n of [E.plate, E.hub]) { A(n, 'cx', mid[0]); A(n, 'cy', mid[1]); } }
       if (H === 'db') { A(E.d1, 'cx', p.w1[0]); A(E.d1, 'cy', p.w1[1]); A(E.d2, 'cx', p.w2[0]); A(E.d2, 'cy', p.w2[1]); }
       if (H === 'db1') { A(E.d1, 'cx', p.w1[0]); A(E.d1, 'cy', p.w1[1]); }
+      if (H === 'bag') { A(E.bag, 'x', p.w1[0] - 7); A(E.bag, 'y', p.w1[1] - 2); }
       if (E.bar) { const vx = p.w1[0] - p.w2[0], vy = p.w1[1] - p.w2[1], L = Math.hypot(vx, vy) || 1, ux = vx / L, uy = vy / L, ext = 26;
         A(E.bar, 'x1', p.w2[0] - ux * ext); A(E.bar, 'y1', p.w2[1] - uy * ext); A(E.bar, 'x2', p.w1[0] + ux * ext); A(E.bar, 'y2', p.w1[1] + uy * ext);
         const pe = (n, q, sgn) => { const cx = q[0] + sgn * ux * 18, cy = q[1] + sgn * uy * 18; A(n, 'x1', cx - uy * 12); A(n, 'y1', cy + ux * 12); A(n, 'x2', cx + uy * 12); A(n, 'y2', cy - ux * 12); };
@@ -520,3 +522,25 @@ Object.assign(EX, {
     cues: ['Quatro apoios', 'Arredonda as costas e olha para o umbigo', 'Depois afunda as costas e olha em frente, com a respiração'],
     easier: 'Menor amplitude', harder: 'Mais lento, 5 s em cada posição' },
 });
+
+/* ===== Puxar em casa com mochila (alternativa segura à mesa e à porta) ===== */
+Object.assign(EX, {
+  bagrow: { name: 'Remada com mochila', group: 'Costas', muscles: 'Dorsais, costas médias, bíceps', anchor: 'f1', ax: 120, hold: 'bag', speed: 1.1, kit: 'mochila com livros',
+    frames: [{ t: 112, h: 102, l1: [16, -2], l2: [14, -4], a1: [0, 0], a2: [-2, -2] }, { t: 112, h: 102, l1: [16, -2], l2: [14, -4], a1: [-125, 5], a2: [-127, 3] }],
+    cues: ['Mochila cheia de livros, pega com as duas mãos pelas alças', 'Tronco inclinado a ~45°, costas direitas', 'Puxa até ao umbigo e aperta as omoplatas'],
+    easier: 'Menos livros na mochila', harder: 'Mais peso e descida em 3 s' },
+  bagrow1: { name: 'Remada unilateral com mochila', group: 'Costas', muscles: 'Dorsais, costas médias, bíceps', anchor: 'f1', ax: 96, ground: ['f1', 'f2'], hold: 'bag', speed: 1.2, kit: 'mochila com livros, cadeira',
+    props: [{ type: 'box', x: 146, w: 44, h: 44 }],
+    frames: [{ t: 104, h: 104, a1: [2, 2], a2: { w: [164, G - 46], k: -1 }, l1: [16, -8], l2: [-16, -16] },
+             { t: 104, h: 104, a1: [-128, 4], a2: { w: [164, G - 46], k: -1 }, l1: [16, -8], l2: [-16, -16] }],
+    cues: ['Uma mão apoiada numa cadeira, costas planas', 'Puxa a mochila até à anca, cotovelo junto ao corpo', 'Estica bem em baixo; faz um lado e depois o outro'],
+    easier: 'Menos peso', harder: 'Pausa de 1 s em cima' },
+  bagcurl: { name: 'Curl com mochila', group: 'Bíceps', muscles: 'Bíceps, antebraços', ax: 120, hold: 'bag', speed: 1.1, kit: 'mochila com livros',
+    frames: [{ t: 180, l1: [2, 0], l2: [-3, -3], a1: [3, 4], a2: [1, 2] }, { t: 180, l1: [2, 0], l2: [-3, -3], a1: [3, 158], a2: [1, 156] }],
+    cues: ['Segura a mochila pelas alças, palmas para cima', 'Cotovelos colados ao corpo, sem balançar', 'Sobe e desce devagar, 3 s a descer'],
+    easier: 'Menos peso', harder: 'Pausa de 1 s a meio da subida' },
+});
+/* exercícios com mobília: avisos de segurança */
+EX.row.warn = EX.rowsup.warn = 'Só numa mesa pesada e estável, que não vire quando puxas. Na dúvida, usa a remada com mochila.';
+EX.doorrow.warn = EX.doorcurl.warn = 'Só com a porta fechada e trancada, a puxar no sentido em que ela fecha, e com uma toalha grossa bem presa. Na dúvida, usa a versão com mochila.';
+EX.dips.warn = 'Usa uma cadeira pesada encostada à parede, que não deslize.';

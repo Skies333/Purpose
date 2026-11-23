@@ -716,7 +716,7 @@ function openEx(id) {
   m.innerHTML = `<div class="modal-in" role="dialog" aria-modal="true" aria-label="${esc(e.name)}">
     <button class="icon-btn mclose" data-mclose aria-label="Fechar">${ic('x')}</button>
     <div class="mfig" data-fig="${id}"></div>
-    <span class="tag">${esc(e.group)}${e.place === 'gym' ? ' · Ginásio' : ''}</span><h2>${esc(e.name)}</h2><p class="muted">${esc(e.muscles)}</p>${e.kit ? `<p class="muted small ex-kit">Precisas de: ${esc(e.kit)}</p>` : ''}
+    <span class="tag">${esc(e.group)}${e.place === 'gym' ? ' · Ginásio' : ''}</span><h2>${esc(e.name)}</h2><p class="muted">${esc(e.muscles)}</p>${e.kit ? `<p class="muted small ex-kit">Precisas de: ${esc(e.kit)}</p>` : ''}${e.warn ? `<p class="ex-warn">${ic('shield')}<span>${esc(e.warn)}</span></p>` : ''}
     ${hasLoad(id) && S.loads[id] ? `<div class="ex-load">${ic('dumb')}<span>Última carga <b>${kg(S.loads[id])} kg</b>${S.best[id] ? ` · recorde <b>${kg(S.best[id])} kg</b>` : ''}</span><button class="link danger sm-link" data-delbest="${id}">Apagar</button></div>` : ''}
     <h3>Como fazer</h3><ol class="cues">${e.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ol>
     <div class="vars"><div><small>Mais fácil</small><p>${esc(e.easier)}</p></div><div class="hard"><small>Mais difícil</small><p>${esc(e.harder)}</p></div></div>
