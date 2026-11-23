@@ -53,6 +53,7 @@ function mergeStates(a, b) {
   out.loads = Object.assign({}, older.loads || {}, newer.loads || {});
   out.best = {}; for (const s of [a.best || {}, b.best || {}]) for (const k in s) out.best[k] = Math.max(out.best[k] || 0, s[k]);
   out.prs = Math.max(a.prs || 0, b.prs || 0);
+  out.prog = Object.assign({}, a.prog || {}); for (const k in (b.prog || {})) if (!out.prog[k] || (b.prog[k].u || 0) >= (out.prog[k].u || 0)) out.prog[k] = b.prog[k];
   // perfil e definições: vence a alteração mais recente de cada campo (a = nuvem, b = este aparelho)
   const fa = a._f || {}, fb = b._f || {}, empty = v => v === undefined || v === null || v === '';
   out._f = {};

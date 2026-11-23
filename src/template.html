@@ -659,6 +659,21 @@ body.noselect{user-select:none;-webkit-user-select:none}
 /* aviso de segurança no exercício */
 .ex-warn{display:flex;gap:10px;align-items:flex-start;background:rgba(255,122,107,.1);border:1px solid rgba(255,122,107,.3);color:#ffb3a8;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.4;margin-top:8px}
 .ex-warn .ic{width:18px;height:18px;flex:none;margin-top:1px}
+/* progressão */
+.repbox{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px 10px 16px}
+.repbox>span{font-weight:700;font-size:14px;display:flex;flex-direction:column}
+.repbox small{color:var(--muted);font-weight:600;font-size:12px}
+.rb-ctl{display:flex;align-items:center;gap:12px}
+.rb-ctl b{font-family:var(--display);font-size:26px;min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
+.ld-btn.sm{width:40px;height:40px}
+.pl-stage-tag{display:flex;gap:8px;align-items:center;background:rgba(214,245,61,.12);color:var(--lime);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700}
+.pl-stage-tag .ic{width:16px;height:16px;flex:none}
+.f-prog{background:var(--lime-ink);color:var(--ink);border-radius:22px;padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.f-prog .f-eye{color:var(--lime)}
+.fp-row{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.35;color:var(--muted)}
+.fp-row .ic{width:16px;height:16px;flex:none;margin-top:1px}
+.fp-row.up{color:var(--ink)}.fp-row.up .ic{color:var(--lime)}
+.fp-row.big{color:var(--lime);font-weight:700}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}

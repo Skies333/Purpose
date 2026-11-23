@@ -7,7 +7,7 @@ const KEY = 'forjaCasa.v1';
 const DEF_S = () => ({ name: '', history: [], weights: [], goal: 5, level: 'av', sound: true, voice: true, mode: 'casa', loads: {}, best: {}, prs: 0, warm: true, cool: true, totals: { reps: {}, sec: {} }, unlocked: [] });
 let S = DEF_S();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
-S._f = S._f || {}; S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa'; snapFields();
+S._f = S._f || {}; S.totals = S.totals || { reps: {}, sec: {} }; S.totals.reps = S.totals.reps || {}; S.totals.sec = S.totals.sec || {}; S.unlocked = S.unlocked || []; S.loads = S.loads || {}; S.best = S.best || {}; S.prog = S.prog || {}; S.prs = S.prs || 0; S.mode = S.mode || 'casa'; snapFields();
 function save() {
   const now = Date.now(); S._t = now; S._f = S._f || {};
   FIELDS.forEach(k => { if (SNAP[k] !== undefined && JSON.stringify(S[k] ?? null) !== SNAP[k]) S._f[k] = now; });
@@ -59,6 +59,7 @@ const IC = {
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   grip: '<circle cx="9" cy="6" r="1.4" fill="currentColor"/><circle cx="15" cy="6" r="1.4" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="currentColor"/><circle cx="15" cy="12" r="1.4" fill="currentColor"/><circle cx="9" cy="18" r="1.4" fill="currentColor"/><circle cx="15" cy="18" r="1.4" fill="currentColor"/>',
   up: '<path d="M6 15l6-6 6 6"/>',
+  dot: '<circle cx="12" cy="12" r="3"/>',
   down: '<path d="M6 9l6 6 6-6"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
 };
@@ -88,6 +89,21 @@ const planDay = d => { const pd = myPlan()[d]; return pd.w ? pd : { w: 'mobility
 const ZONE_FIG_GYM = { 'Corpo inteiro': 'deadlift', 'Parte de cima': 'barrow', 'Peito & Tríceps': 'bench', 'Costas & Bíceps': 'pulldown', 'Ombros & Braços': 'lateralraise', 'Pernas': 'legpress', 'Core': 'abwheel' };
 const kitOf = w => { const k = [...new Set(w.items.flatMap(i => (EX[i[0]].kit || '').split(', ')).filter(Boolean))]; return k.length ? k.join(', ').replace(/^./, c => c.toUpperCase()) : 'Nenhum'; };
 const hasLoad = id => EX[id].place === 'gym' && !BODYWEIGHT.includes(id);
+/* ===== Progressão automática (dupla progressão) =====
+   Cada exercício de força guarda em S.prog[id]: dt (reps/segundos a mais sobre a base do treino), st (etapa: 0 normal, 1 descida lenta, 2 variante difícil),
+   sug (carga sugerida no ginásio), max (melhor marca nas séries até à falha), u (quando mudou).
+   Regra: se fizeres o alvo em TODAS as séries, na próxima vez o alvo sobe. Ao chegar ao topo da faixa:
+   em casa sobe-se de etapa (o alvo volta à base); no ginásio sobe a carga e o alvo volta à base. */
+const progOf = id => S.prog[id] || {};
+const isGymEx = id => EX[id].place === 'gym';
+const loadInc = id => { const e = EX[id]; if (['bbsquat', 'deadlift', 'rdl', 'hipthrust', 'legpress'].includes(id)) return 5; return ['db', 'db1', 'db-front'].includes(e.hold) ? 2 : 2.5; };
+function repTop(id, base, mode) {
+  if (mode === 't') return base + Math.max(10, Math.round(base * .5 / 5) * 5);
+  if (isGymEx(id)) return base + (base <= 6 ? 2 : base <= 10 ? 3 : 4);
+  return base + Math.max(3, Math.round(base * .5));
+}
+const progTarget = (id, base, mode) => Math.min(repTop(id, base, mode), base + (progOf(id).dt || 0));
+const STAGE_TXT = (id, st) => st === 1 ? 'Desce em 3 segundos em cada repetição' : st >= 2 ? (EX[id].harder || 'Versão mais difícil') : '';
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
 function modeSwitch(compact) {
@@ -114,7 +130,10 @@ function scaled(item, L, home) {
 function plan(w, L = lvl()) {
   const rounds = Math.max(1, w.rounds + L.dr), rest = Math.round(w.rest * L.rk / 5) * 5, rr = Math.round(w.roundRest * L.rk / 5) * 5;
   const items = w.items.map(i => scaled(i, L, w.place !== 'gym'));
-  items.forEach(i => { if (i.sets && !i.rest) i.rest = rest; });
+  items.forEach(i => {
+    if (i.sets && !i.rest) i.rest = rest;
+    if (i.sets && i.amt !== 'MÁX') { i.base = i.amt; i.amt = progTarget(i.ex, i.base, i.mode); i.top = repTop(i.ex, i.base, i.mode); i.st = isGymEx(i.ex) ? 0 : (progOf(i.ex).st || 0); }
+  });
   let sec = 0;
   if (w.mode === 'sets') {
     items.forEach(i => sec += i.sets * ((i.mode === 't' ? i.amt : (i.amt === 'MÁX' ? 10 : i.amt) * 3.5) * (i.side ? 2 : 1)) + (i.sets - 1) * i.rest);
@@ -131,7 +150,7 @@ function plan(w, L = lvl()) {
 }
 /* "por perna" nas pernas e glúteos, "por lado" no resto (braços, core, mobilidade) */
 const sideW = ex => ['Pernas', 'Glúteos'].includes(EX[ex].group) ? 'perna' : 'lado';
-const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.mode === 't' ? ' s' : '') + (i.side ? ' / ' + sideW(i.ex) : '')}${hasLoad(i.ex) && S.loads[i.ex] ? ` · ${kg(S.loads[i.ex])} kg` : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / ' + sideW(i.ex) : ''}`);
+const amtTxt = i => i.sets ? `${i.sets} × ${i.amt === 'MÁX' ? 'máx.' : i.amt + (i.mode === 't' ? ' s' : '') + (i.side ? ' / ' + sideW(i.ex) : '')}${hasLoad(i.ex) && (progOf(i.ex).sug || S.loads[i.ex]) ? ` · ${kg(progOf(i.ex).sug || S.loads[i.ex])} kg` : ''}${i.st === 1 ? ' · descida lenta' : i.st >= 2 ? ' · versão difícil' : ''}` : i.mode === 't' ? `${i.amt} s${i.side ? ' / lado' : ''}` : (i.amt === 'MÁX' ? 'Máx. reps' : `${i.amt} reps${i.side ? ' / ' + sideW(i.ex) : ''}`);
 
 /* dias de descanso e de mobilidade do plano não quebram a sequência (mas também não contam) */
 function restOk(d) { const pd = myPlan()[d.getDay()]; const w = pd && pd.w ? WMAP[pd.w] : null; return !w || w.id === 'mobility' || w.cat === 'Mobilidade'; }
@@ -878,7 +897,7 @@ function startWorkout(id) {
     steps.push({ k: 'rest', dur: 10, label: 'Treino feito! Vamos alongar', cool: true });
     COOLDOWN.forEach(([ex, s, side]) => steps.push({ k: 'work', ex, mode: 't', amt: side ? s / 2 : s, side: !!side, phase: 'cool' }));
   }
-  PL = { w, L, p, steps, idx: 0, left: 0, el: 0, paused: false, t0: Date.now(), last: performance.now(), workCount: steps.filter(s => s.k === 'work' && !s.phase).length, done: { reps: {}, sec: {} }, loads: {}, prs: [] };
+  PL = { w, L, p, steps, idx: 0, left: 0, el: 0, paused: false, t0: Date.now(), last: performance.now(), workCount: steps.filter(s => s.k === 'work' && !s.phase).length, done: { reps: {}, sec: {} }, loads: {}, prs: [], log: {} };
   closeSheet(true);
   $('#player').hidden = false; document.body.classList.add('lock');
   requestWake();
@@ -889,8 +908,42 @@ function startWorkout(id) {
 function nextWorkIdx(from) { for (let i = from; i < PL.steps.length; i++) if (PL.steps[i].k === 'work') return i; return -1; }
 function countDone() {
   const s = PL.steps[PL.idx]; if (!s || s.k !== 'work' || s.phase || s.counted) return; s.counted = 1;
-  if (s.mode === 'r') { const n = (s.amt === 'MÁX' ? 12 : s.amt) * (s.side ? 2 : 1); PL.done.reps[s.ex] = (PL.done.reps[s.ex] || 0) + n; }
-  else { const n = Math.round(s.amt * (s.side ? 2 : 1) - Math.max(0, PL.left)); PL.done.sec[s.ex] = (PL.done.sec[s.ex] || 0) + n; }
+  if (s.mode === 'r') {
+    const got = s.got ?? (s.amt === 'MÁX' ? 12 : s.amt);
+    PL.done.reps[s.ex] = (PL.done.reps[s.ex] || 0) + got * (s.side ? 2 : 1);
+    if (s.sets) logSet(s, got);
+  } else {
+    const done = Math.round(s.amt * (s.side ? 2 : 1) - Math.max(0, PL.left)); PL.done.sec[s.ex] = (PL.done.sec[s.ex] || 0) + done;
+    if (s.sets) logSet(s, Math.round(done / (s.side ? 2 : 1)));
+  }
+}
+function logSet(s, got) {
+  const L = PL.log[s.ex] = PL.log[s.ex] || { ex: s.ex, mode: s.mode, base: s.base, target: s.amt, top: s.top, sets: s.sets, got: [], load: null };
+  L.got.push(got); if (hasLoad(s.ex)) L.load = curLoad(s.ex);
+}
+/* depois do treino: atualiza os alvos e devolve o que muda na próxima vez */
+function applyProgress() {
+  const out = [];
+  for (const id in PL.log) {
+    const L = PL.log[id], P = Object.assign({}, progOf(id)), name = EX[id].name, u = s => s + (L.mode === 't' ? ' s' : ' reps');
+    if (L.target === 'MÁX') { const m = Math.max(...L.got); if (m > (P.max || 0)) { if (P.max) out.push({ id, up: 1, txt: `${name}: novo máximo, ${m} reps` }); P.max = m; } S.prog[id] = Object.assign(P, { u: Date.now() }); continue; }
+    if (L.got.length < L.sets) continue;                       // treino incompleto neste exercício: não mexe
+    const ok = L.got.every(g => g >= L.target);
+    if (!ok) { out.push({ id, txt: `${name}: mantém ${u(L.target)} (fizeste ${L.got.join(', ')})` }); continue; }
+    const step = L.mode === 't' ? 5 : isGymEx(id) || L.target < 15 ? 1 : 2;
+    let next = L.target + step;
+    if (next > L.top) {
+      if (isGymEx(id)) {
+        if (L.load) { P.sug = Math.round((L.load + loadInc(id)) * 4) / 4; P.dt = 0; out.push({ id, up: 2, txt: `${name}: sobe para ${kg(P.sug)} kg (${u(L.base)})` }); }
+        else { P.dt = L.top - L.base; out.push({ id, up: 1, txt: `${name}: topo da faixa, regista a carga para subir` }); }
+      } else if ((P.st || 0) < 2) {
+        P.st = (P.st || 0) + 1; P.dt = 0;
+        out.push({ id, up: 2, txt: `${name}: nova etapa! ${P.st === 1 ? 'Agora desce em 3 s' : 'Passa à versão difícil'}, ${u(L.base)}` });
+      } else { P.dt = L.top - L.base; out.push({ id, up: 1, txt: `${name}: no máximo do programa, ${u(L.top)}` }); }
+    } else { P.dt = next - L.base; if (isGymEx(id) && L.load) P.sug = L.load; out.push({ id, up: 1, txt: `${name}: ${u(next)}${isGymEx(id) && L.load ? ` com ${kg(L.load)} kg` : ''} (+${step})` }); }
+    S.prog[id] = Object.assign(P, { u: Date.now() });
+  }
+  return out.sort((x, y) => (y.up || 0) - (x.up || 0));
 }
 function enter(i) {
   if (PL.steps[PL.idx] && i > PL.idx) countDone();
@@ -950,6 +1003,8 @@ function drawPlayer() {
         : `<div class="pl-big"><span id="pl-num">${s.amt === 'MÁX' ? 'MÁX' : s.amt}</span><small>${s.amt === 'MÁX' ? 'reps até à falha' : 'repetições'}${s.side ? ' por ' + sideW(s.ex) : ''}</small><span class="pl-time">${ic('clock')}<b id="pl-time">${fmt(P.left).includes(':') ? fmt(P.left) : '0:' + fmt(P.left).padStart(2, '0')}</b></span></div>
          <div class="pl-bar" id="pl-ring" style="--p:1"><i></i></div><small class="pl-hint">Acabaste antes do tempo? Carrega em <b>Feito</b>.</small>`}
       ${s.sets ? `<div class="setdots">${Array.from({ length: s.sets }, (_, j) => `<span class="${j < s.set ? 'd' : j === s.set ? 'c' : ''}"></span>`).join('')}<small>Série ${s.set + 1} de ${s.sets}</small></div>` : ''}
+      ${s.st ? `<p class="pl-stage-tag">${ic('bolt')}<span>Etapa ${s.st + 1}: ${esc(STAGE_TXT(s.ex, s.st))}</span></p>` : ''}
+      ${s.sets && s.mode === 'r' ? repBox(s) : ''}
       ${s.sets && hasLoad(s.ex) ? loadBox(s.ex) : `<p class="pl-cue">${esc(e.cues[0])}</p>`}</div>
       <div class="pl-ctrl"><button class="btn ghost" data-prev>${ic('back')} Anterior</button>
         ${s.mode === 'r' ? `<button class="btn lime" data-next>${ic('check')} Feito</button>` : `<button class="btn lime" data-pause>${P.paused ? ic('play') + ' Retomar' : ic('pause') + ' Pausa'}</button>`}
@@ -969,12 +1024,18 @@ function drawPlayer() {
   root.querySelectorAll('[data-fig]').forEach(x => makeFigure(x, x.dataset.fig));
   updT();
 }
-function curLoad(id) { return PL.loads[id] ?? S.loads[id] ?? null; }
+function repBox(s) {
+  if (s.got == null) s.got = s.amt === 'MÁX' ? (progOf(s.ex).max || 10) : s.amt;
+  const last = progOf(s.ex).max;
+  return `<div class="repbox"><span>Quantas fizeste?${s.amt === 'MÁX' && last ? ` <small>Recorde: ${last}</small>` : ''}</span>
+    <div class="rb-ctl"><button class="ld-btn sm" data-rep="-1" aria-label="Menos uma">−</button><b id="rep-v">${s.got}</b><button class="ld-btn sm" data-rep="1" aria-label="Mais uma">+</button></div></div>`;
+}
+function curLoad(id) { return PL.loads[id] ?? progOf(id).sug ?? S.loads[id] ?? null; }
 function loadBox(id) {
   const v = curLoad(id), last = S.loads[id], best = S.best[id];
   return `<div class="loadbox"><button class="ld-btn" data-load="-1" aria-label="Menos carga">−</button>
     <div class="ld-v"><label class="sr" for="ld-val">Carga em kg</label><input id="ld-val" type="text" inputmode="decimal" autocomplete="off" placeholder="—" value="${v == null ? '' : kg(v)}"><span>kg</span>
-      <small>${last ? `Última vez: ${kg(last)} kg${best ? ` · recorde ${kg(best)} kg` : ''}` : 'Escreve a carga que vais usar'}</small></div>
+      <small>${progOf(id).sug && progOf(id).sug !== last ? `Sugestão: ${kg(progOf(id).sug)} kg · última vez ${kg(last)} kg` : last ? `Última vez: ${kg(last)} kg${best ? ` · recorde ${kg(best)} kg` : ''}` : 'Escreve a carga que vais usar'}</small></div>
     <button class="ld-btn" data-load="1" aria-label="Mais carga">+</button></div>`;
 }
 function commitLoad() {
@@ -989,6 +1050,7 @@ function finish() {
   clearInterval(PL.timer);
   const min = Math.max(1, Math.round((Date.now() - PL.t0) / 60000)), kcal = Math.round(min * PL.w.rate);
   countDone();
+  const progMsgs = applyProgress();
   for (const k in PL.done.reps) S.totals.reps[k] = (S.totals.reps[k] || 0) + PL.done.reps[k];
   for (const k in PL.done.sec) S.totals.sec[k] = (S.totals.sec[k] || 0) + PL.done.sec[k];
   S.history.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), d: today(), w: PL.w.id, min, kcal, lvl: PL.L.label, lv: PL.L.id, h: new Date().getHours() });
@@ -1018,6 +1080,7 @@ function finish() {
       ${stk > 1 ? `<div class="f-chip f-up" ${nx()}>${ic('fire')}<span><b>${stk} dias seguidos</b> a treinar</span></div>` : ''}
       ${prs.length ? `<div class="f-chip f-up" ${nx()}>${ic('trophy')}<span><b>${prs.length > 1 ? prs.length + ' recordes novos' : 'Recorde novo'}</b> · ${prs.map(x => esc(EX[x].name) + ' ' + kg(S.best[x]) + ' kg').join(', ')}</span></div>` : ''}
       ${fresh.length ? `<div class="f-ach f-up" ${nx()}><span class="f-eye">${fresh.length > 1 ? 'Novas medalhas' : 'Nova medalha'}</span>${fresh.map(a => `<div class="na">${medal(a)}<div><b>${esc(a.name)}</b><small>${esc(a.desc)}</small></div></div>`).join('')}</div>` : ''}
+      ${progMsgs.length ? `<div class="f-prog f-up" ${nx()}><span class="f-eye">Na próxima vez</span>${progMsgs.slice(0, 6).map(m => `<div class="fp-row ${m.up === 2 ? 'big' : m.up ? 'up' : ''}">${ic(m.up ? 'up' : 'dot')}<span>${esc(m.txt)}</span></div>`).join('')}</div>` : ''}
       <div class="f-foot f-up" ${nx()}><p>Agora: proteína nas próximas horas e 7–9 h de sono.</p><button class="btn dark full" data-endclose>Fechar</button></div>
     </div>
   </div>`;
@@ -1149,6 +1212,7 @@ document.addEventListener('click', ev => {
   if ('skipphase' in d) { const ph = (PL.steps[PL.idx].phase) || (PL.steps[nextWorkIdx(PL.idx)] || {}).phase;
     if (ph === 'cool') return finish();
     const j = PL.steps.findIndex(x => x.main); return enter(j > 0 ? j : PL.idx + 1); }
+  if (d.rep) { const s = PL.steps[PL.idx]; s.got = Math.max(0, (s.got || 0) + +d.rep); const n = $('#rep-v'); if (n) { n.textContent = s.got; if (!RM) { n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } } return; }
   if (d.load) { const s = PL.steps[PL.idx]; const v = Math.max(0, (curLoad(s.ex) ?? 0) + +d.load * loadStep(s.ex)); PL.loads[s.ex] = v || null; const n = $('#ld-val'); if (n) { n.value = v ? kg(v) : ''; if (!RM) { n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } } return; }
   if ('skip' in d) { PL.steps[PL.idx].counted = 1; return enter(PL.idx + 1); }
   if ('next' in d) { const s = PL.steps[PL.idx]; if (s.k === 'work') endChime(); commitLoad(); return enter(PL.idx + 1); }
