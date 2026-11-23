@@ -14,9 +14,22 @@ const WORKOUTS = [
   { id: 'legs2', mode: 'sets', name: 'Posteriores & Glúteos', cat: 'Pernas', rest: 75, roundRest: 90, rate: 7,
     desc: 'O segundo dia de pernas, focado na parte de trás: glúteos e isquiotibiais. Protege os joelhos, dá forma às pernas e ajuda no sprint. O nordic curl é dos melhores exercícios que existem, com ou sem ginásio.',
     items: [['sofathrust', 'r', 15, 0, 4, 75], ['nordic', 'r', 5, 0, 3, 120], ['slidercurl', 'r', 10, 0, 3, 60], ['pistolbox', 'r', 8, 1, 3, 75], ['cossack', 'r', 8, 1, 2, 60], ['bridge1', 'r', 12, 1, 2, 45]] },
-  { id: 'upper', mode: 'sets', name: 'Parte de Cima Completa', cat: 'Parte de cima', rest: 75, roundRest: 90, rate: 6,
-    desc: 'Segunda sessão da semana para o tronco, com variantes diferentes das de segunda e quarta. Alterna empurrar e puxar para descansares um lado enquanto trabalhas o outro.',
+  { id: 'upper', mode: 'sets', name: 'Parte de Cima B', cat: 'Parte de cima', rest: 75, roundRest: 90, rate: 6,
+    desc: 'Segunda sessão da semana para o tronco, com variantes diferentes: pseudo-planche, pike, remada unilateral e esfinge. Alterna empurrar e puxar para descansares um lado enquanto trabalhas o outro.',
     items: [['pseudoplanche', 'r', 8, 0, 3, 90], ['bagrow', 'r', 12, 0, 3, 90], ['pike', 'r', 10, 0, 3, 75], ['bagrow1', 'r', 10, 1, 3, 75], ['sphinx', 'r', 10, 0, 3, 60], ['bagcurl', 'r', 'MÁX', 0, 2, 60]] },
+  /* corpo inteiro (para 1–3 treinos por semana): cada sessão trabalha pernas, empurrar, puxar e core */
+  { id: 'fullA', mode: 'sets', name: 'Corpo Inteiro A', cat: 'Corpo inteiro', rest: 75, roundRest: 90, rate: 7,
+    desc: 'Sessão completa de força: pernas a uma perna, empurrar, puxar, glúteos, ombros e core. Pensada para quem treina 2 ou 3 vezes por semana e quer trabalhar tudo em cada treino.',
+    items: [['bulgarian', 'r', 10, 1, 3, 90], ['decline', 'r', 10, 0, 3, 90], ['bagrow', 'r', 12, 0, 3, 90], ['sofathrust', 'r', 15, 0, 3, 75], ['pikeelev', 'r', 8, 0, 2, 75], ['deadbug', 'r', 12, 0, 2, 45]] },
+  { id: 'fullB', mode: 'sets', name: 'Corpo Inteiro B', cat: 'Corpo inteiro', rest: 75, roundRest: 90, rate: 7,
+    desc: 'Mesmos músculos do treino A com exercícios diferentes: subidas, remada unilateral, arqueiro e nordic curl. Alternar A e B dá variedade sem perder a progressão.',
+    items: [['stepup', 'r', 12, 1, 3, 75], ['archer', 'r', 6, 1, 3, 90], ['bagrow1', 'r', 10, 1, 3, 75], ['nordic', 'r', 5, 0, 3, 120], ['dips', 'r', 12, 0, 2, 60], ['sideplank', 't', 30, 1, 2, 30]] },
+  { id: 'fullC', mode: 'sets', name: 'Corpo Inteiro C', cat: 'Corpo inteiro', rest: 75, roundRest: 90, rate: 7,
+    desc: 'O terceiro treino da semana de corpo inteiro: pistol, pseudo-planche, puxadas e peso morto a uma perna, com bíceps e abdominais no fim.',
+    items: [['pistolbox', 'r', 8, 1, 3, 75], ['pseudoplanche', 'r', 8, 0, 3, 90], ['wpull', 'r', 12, 0, 3, 60], ['slrdl', 'r', 10, 1, 3, 60], ['bagcurl', 'r', 12, 0, 2, 60], ['vup', 'r', 12, 0, 2, 45]] },
+  { id: 'upperA', mode: 'sets', name: 'Parte de Cima A', cat: 'Parte de cima', rest: 75, roundRest: 90, rate: 6,
+    desc: 'Tronco completo com os exercícios mais pesados: declinadas, pike elevado e dips a empurrar, remadas e puxadas a puxar. Alterna com a Parte de Cima B.',
+    items: [['decline', 'r', 10, 0, 4, 90], ['bagrow', 'r', 12, 0, 4, 90], ['pikeelev', 'r', 8, 0, 3, 90], ['wpull', 'r', 12, 0, 3, 60], ['dips', 'r', 12, 0, 3, 60], ['bagcurl', 'r', 12, 0, 3, 60]] },
   { id: 'arms', mode: 'sets', name: 'Ombros & Braços', cat: 'Parte de cima', rest: 60, roundRest: 75, rate: 5,
     desc: 'Sessão extra para ombros cheios e braços. Faz num dia mais leve ou no lugar de um treino quando queres foco nos braços.',
     items: [['pikeelev', 'r', 8, 0, 3, 90], ['bagcurl', 'r', 12, 0, 3, 60], ['diamond', 'r', 12, 0, 3, 60], ['bagrow', 'r', 12, 0, 3, 60], ['sphinx', 'r', 10, 0, 3, 60], ['yraise', 'r', 12, 0, 3, 45]] },
@@ -55,16 +68,17 @@ const LEVELS = [
   { id: 'br', label: 'Brutal', k: 1.25, dr: 1, rk: .8 },
 ];
 
-// Plano semanal (0 = domingo): empurrar / puxar / pernas 2× por semana, cardio e mobilidade pelo meio
-const PLAN = {
-  1: { w: 'push', focus: 'Empurrar' },
-  2: { w: 'legs', focus: 'Pernas · quadríceps' },
-  3: { w: 'pull', focus: 'Puxar + core', extra: 'core' },
-  4: { w: 'hiit', focus: 'Cardio + mobilidade', extra: 'mobility' },
-  5: { w: 'upper', focus: 'Parte de cima' },
-  6: { w: 'legs2', focus: 'Posteriores + core', extra: 'core' },
-  0: { w: 'mobility', focus: 'Descanso ativo' },
+// Planos semanais por número de treinos (0 = domingo). Dias sem treino = descanso.
+const PLANS = {
+  1: { 3: { w: 'fullA', focus: 'Corpo inteiro' } },
+  2: { 1: { w: 'fullA', focus: 'Corpo inteiro' }, 4: { w: 'fullB', focus: 'Corpo inteiro' } },
+  3: { 1: { w: 'fullA', focus: 'Corpo inteiro' }, 3: { w: 'fullB', focus: 'Corpo inteiro' }, 5: { w: 'fullC', focus: 'Corpo inteiro' } },
+  4: { 1: { w: 'upperA', focus: 'Parte de cima' }, 2: { w: 'legs', focus: 'Pernas · quadríceps' }, 4: { w: 'upper', focus: 'Parte de cima' }, 5: { w: 'legs2', focus: 'Posteriores + core', extra: 'core' } },
+  5: { 1: { w: 'push', focus: 'Empurrar' }, 2: { w: 'pull', focus: 'Puxar + core', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas · quadríceps' }, 5: { w: 'upper', focus: 'Parte de cima' }, 6: { w: 'legs2', focus: 'Posteriores + core', extra: 'core' } },
+  6: { 1: { w: 'push', focus: 'Empurrar' }, 2: { w: 'legs', focus: 'Pernas · quadríceps' }, 3: { w: 'pull', focus: 'Puxar + core', extra: 'core' }, 4: { w: 'hiit', focus: 'Cardio + mobilidade', extra: 'mobility' },
+       5: { w: 'upper', focus: 'Parte de cima' }, 6: { w: 'legs2', focus: 'Posteriores + core', extra: 'core' }, 0: { w: 'mobility', focus: 'Descanso ativo' } },
 };
+const PLAN = PLANS[6];
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const DAYS_S = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
@@ -89,12 +103,21 @@ WORKOUTS.push(
   { id: 'glegs2', place: 'gym', mode: 'sets', name: 'Posteriores & Glúteos', cat: 'Pernas', rest: 90, roundRest: 120, rate: 7,
     desc: 'Segundo dia de pernas, focado na cadeia posterior: peso morto romeno, hip thrust e leg curl. Glúteos e isquiotibiais fortes protegem os joelhos e a lombar.',
     items: [['rdl', 'r', 8, 0, 4, 150], ['hipthrust', 'r', 10, 0, 3, 120], ['legcurl', 'r', 12, 0, 3, 75], ['goblet', 'r', 12, 0, 3, 90], ['dblunge', 'r', 12, 1, 2, 75], ['calfdb', 'r', 15, 0, 3, 45], ['cablecrunch', 'r', 15, 0, 3, 45]] },
-  { id: 'gupper', place: 'gym', mode: 'sets', name: 'Parte de Cima', cat: 'Parte de cima', rest: 90, roundRest: 120, rate: 6,
-    desc: 'O segundo estímulo da semana para o tronco, com variantes diferentes das de segunda e terça: inclinado, elevações supinadas, remada unilateral. Menos séries por exercício, mais variedade.',
+  { id: 'gupper', place: 'gym', mode: 'sets', name: 'Parte de Cima B', cat: 'Parte de cima', rest: 90, roundRest: 120, rate: 6,
+    desc: 'O segundo estímulo da semana para o tronco, com variantes diferentes: inclinado, elevações supinadas, remada unilateral e dips. Menos séries por exercício, mais variedade.',
     items: [['incline', 'r', 8, 0, 4, 120], ['chinup', 'r', 'MÁX', 0, 3, 120], ['ohpress', 'r', 8, 0, 3, 120], ['dbrow', 'r', 10, 1, 3, 90], ['dipsbar', 'r', 'MÁX', 0, 2, 90], ['lateralraise', 'r', 15, 0, 3, 45], ['facepull', 'r', 15, 0, 2, 45]] },
-  { id: 'gfull', place: 'gym', mode: 'sets', name: 'Corpo Inteiro', cat: 'Corpo inteiro', rest: 90, roundRest: 120, rate: 7,
-    desc: 'Os grandes compostos numa só sessão, com peso morto. Ideal para semanas com só 3 dias de ginásio (segunda, quarta e sexta) ou para compensar um treino falhado.',
-    items: [['deadlift', 'r', 5, 0, 3, 180], ['bench', 'r', 8, 0, 3, 120], ['pulldown', 'r', 10, 0, 3, 90], ['goblet', 'r', 12, 0, 3, 90], ['ohpress', 'r', 10, 0, 2, 90], ['abwheel', 'r', 10, 0, 3, 60]] },
+  { id: 'gfull', place: 'gym', mode: 'sets', name: 'Corpo Inteiro A', cat: 'Corpo inteiro', rest: 90, roundRest: 120, rate: 7,
+    desc: 'Agachamento, supino e remada pesados, mais ombros, posteriores e core. O treino A de um plano de 2 ou 3 dias: trabalha tudo, com os básicos primeiro.',
+    items: [['bbsquat', 'r', 6, 0, 3, 180], ['bench', 'r', 8, 0, 3, 150], ['barrow', 'r', 8, 0, 3, 120], ['lateralraise', 'r', 15, 0, 3, 45], ['legcurl', 'r', 12, 0, 2, 60], ['abwheel', 'r', 10, 0, 2, 60]] },
+  { id: 'gfullB', place: 'gym', mode: 'sets', name: 'Corpo Inteiro B', cat: 'Corpo inteiro', rest: 90, roundRest: 120, rate: 7,
+    desc: 'Peso morto, press de ombros e elevações como base, com leg press, inclinado e face pulls a completar. Alterna com o treino A.',
+    items: [['deadlift', 'r', 5, 0, 3, 180], ['ohpress', 'r', 8, 0, 3, 120], ['pullup', 'r', 'MÁX', 0, 3, 120], ['legpress', 'r', 10, 0, 3, 120], ['incline', 'r', 10, 0, 2, 90], ['facepull', 'r', 15, 0, 2, 45]] },
+  { id: 'gfullC', place: 'gym', mode: 'sets', name: 'Corpo Inteiro C', cat: 'Corpo inteiro', rest: 90, roundRest: 120, rate: 7,
+    desc: 'O terceiro dia de corpo inteiro: búlgaro e romeno para as pernas, inclinado e remada sentada para o tronco, braços e abdominal no fim.',
+    items: [['bulgdb', 'r', 10, 1, 3, 90], ['incline', 'r', 10, 0, 3, 120], ['cablerow', 'r', 12, 0, 3, 90], ['rdl', 'r', 10, 0, 3, 120], ['ohtri', 'r', 12, 0, 2, 60], ['hammer', 'r', 12, 0, 2, 60], ['cablecrunch', 'r', 15, 0, 2, 45]] },
+  { id: 'gupperA', place: 'gym', mode: 'sets', name: 'Parte de Cima A', cat: 'Parte de cima', rest: 90, roundRest: 120, rate: 6,
+    desc: 'Tronco pesado: supino e remada com barra primeiro, depois ombros, puxada e braços. Alterna com a Parte de Cima B num plano de 4 dias.',
+    items: [['bench', 'r', 6, 0, 4, 150], ['barrow', 'r', 8, 0, 4, 120], ['ohpress', 'r', 10, 0, 3, 90], ['pulldown', 'r', 10, 0, 3, 90], ['lateralraise', 'r', 15, 0, 3, 45], ['curl', 'r', 10, 0, 2, 60], ['pushdown', 'r', 12, 0, 2, 60]] },
   { id: 'garms', place: 'gym', mode: 'sets', name: 'Ombros & Braços', cat: 'Ombros & Braços', rest: 60, roundRest: 90, rate: 5,
     desc: 'Ombros redondos e braços cheios: press, elevações laterais, face pulls, e bíceps e tríceps em todos os ângulos. Treino extra para quando há tempo.',
     items: [['ohpress', 'r', 10, 0, 3, 90], ['lateralraise', 'r', 15, 0, 4, 45], ['facepull', 'r', 15, 0, 3, 45], ['curl', 'r', 10, 0, 3, 60], ['ohtri', 'r', 12, 0, 3, 60], ['hammer', 'r', 12, 0, 3, 60], ['pushdown', 'r', 15, 0, 3, 45]] },
@@ -104,15 +127,27 @@ WORKOUTS.push(
 );
 WORKOUTS.forEach(w => { w.place = w.place || 'casa'; WMAP[w.id] = w; });
 const CATS_GYM = ['Todos', 'Corpo inteiro', 'Parte de cima', 'Peito & Tríceps', 'Costas & Bíceps', 'Ombros & Braços', 'Pernas', 'Core'];
-const PLAN_GYM = {
-  1: { w: 'gpush', focus: 'Empurrar' },
-  2: { w: 'gpull', focus: 'Puxar' },
-  3: { w: 'glegs', focus: 'Pernas · quadríceps' },
-  4: { w: 'mobility', focus: 'Descanso ativo' },
-  5: { w: 'gupper', focus: 'Parte de cima + core', extra: 'gcore' },
-  6: { w: 'glegs2', focus: 'Posteriores & glúteos' },
-  0: { w: 'mobility', focus: 'Descanso ativo' },
+const PLANS_GYM = {
+  1: { 3: { w: 'gfull', focus: 'Corpo inteiro' } },
+  2: { 1: { w: 'gfull', focus: 'Corpo inteiro' }, 4: { w: 'gfullB', focus: 'Corpo inteiro' } },
+  3: { 1: { w: 'gfull', focus: 'Corpo inteiro' }, 3: { w: 'gfullB', focus: 'Corpo inteiro' }, 5: { w: 'gfullC', focus: 'Corpo inteiro' } },
+  4: { 1: { w: 'gupperA', focus: 'Parte de cima' }, 2: { w: 'glegs', focus: 'Pernas · quadríceps' }, 4: { w: 'gupper', focus: 'Parte de cima + core', extra: 'gcore' }, 5: { w: 'glegs2', focus: 'Posteriores & glúteos' } },
+  5: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar' }, 3: { w: 'glegs', focus: 'Pernas · quadríceps' }, 5: { w: 'gupper', focus: 'Parte de cima + core', extra: 'gcore' }, 6: { w: 'glegs2', focus: 'Posteriores & glúteos' } },
+  6: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar' }, 3: { w: 'glegs', focus: 'Pernas · quadríceps' }, 4: { w: 'garms', focus: 'Ombros & braços' },
+       5: { w: 'gupper', focus: 'Parte de cima + core', extra: 'gcore' }, 6: { w: 'glegs2', focus: 'Posteriores & glúteos' } },
 };
+const PLAN_GYM = PLANS_GYM[5];
+/* como cada frequência está organizada (mostrado no plano) */
+const PLAN_WHY = {
+  1: 'Um treino de corpo inteiro. Mantém a forma, mas para progredir a sério tenta pelo menos 2.',
+  2: 'Corpo inteiro A e B, com 2–3 dias de descanso entre eles. O mínimo para continuar a progredir.',
+  3: 'Corpo inteiro 3× por semana, com um dia de descanso entre treinos. Cada músculo é treinado 3 vezes: o mais eficiente para quem tem pouco tempo.',
+  4: 'Parte de cima e pernas, 2× cada. O melhor equilíbrio entre volume e descanso.',
+  5: 'Empurrar, puxar e pernas, depois parte de cima e posteriores: cada músculo 2× por semana, com descanso a meio.',
+  6: 'Divisão completa para quem quer treinar quase todos os dias: cada músculo 2× por semana, mais cardio e mobilidade.',
+  7: 'Os 6 treinos da semana mais mobilidade ao domingo. Lembra-te: é no descanso que o músculo cresce.',
+};
+
 /* material que precisas em casa */
 Object.entries({ row: 'mesa robusta', rowsup: 'mesa robusta', dips: 'cadeira', decline: 'cadeira', bulgarian: 'cadeira', wallsit: 'parede' }).forEach(([k, v]) => { EX[k].kit = v; });
 const BODYWEIGHT = ['pullup', 'chinup', 'dipsbar', 'hangleg', 'abwheel'];

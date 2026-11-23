@@ -70,8 +70,16 @@ const myWorkouts = () => WORKOUTS.filter(w => w.place === S.mode);
 const myCats = () => isGym() ? CATS_GYM : CATS;
 const PLAN_ORDER = [1, 2, 3, 4, 5, 6, 0];
 // plano personalizado (guardado em S.plans[modo]); senão o plano de origem
+/* plano sugerido conforme o número de treinos por semana (objetivo semanal) */
+const planFreq = () => Math.min(6, Math.max(1, S.goal || 4));
+function basePlan() {
+  const src = (isGym() ? PLANS_GYM : PLANS)[planFreq()], out = {};
+  PLAN_ORDER.forEach(d => { out[d] = src[d] || { w: null, focus: 'Descanso' }; });
+  if ((S.goal || 0) >= 7 && !out[0].w) out[0] = { w: 'mobility', focus: 'Descanso ativo' };
+  return out;
+}
 const myPlan = () => {
-  const base = isGym() ? PLAN_GYM : PLAN, cust = S.plans && S.plans[S.mode];
+  const base = basePlan(), cust = S.plans && S.plans[S.mode];
   if (!cust) return base;
   const out = {}; PLAN_ORDER.forEach(d => { const c = cust[d] || {}; out[d] = { w: c.w && WMAP[c.w] ? c.w : null, extra: c.extra && WMAP[c.extra] ? c.extra : null, focus: c.w && WMAP[c.w] ? WMAP[c.w].cat : 'Descanso' }; });
   return out;
@@ -530,8 +538,11 @@ const VIEWS = {
     const doneDays = order.filter(d => doneOn(d).length).length;
     const doneTag = d => { const hs = doneOn(d); if (!hs.length) return ''; const w = WMAP[hs[hs.length - 1].w]; return `<span class="p-done">${ic('check')} Feito${w && w.id !== (myPlan()[d].w || 'mobility') ? ' · ' + esc(w.name) : ''}</span>`; };
     return `
-    <header class="top"><div><h1>Plano semanal</h1><p class="muted">${isGym() ? 'Empurrar, puxar, pernas, parte de cima e posteriores: cada músculo 2× por semana, com descanso ativo a meio da semana.' : 'Empurrar, puxar e pernas duas vezes por semana, com cardio e mobilidade pelo meio. Feito para ganhar massa e definir.'}</p></div></header>
+    <header class="top"><div><h1>Plano semanal</h1><p class="muted">${isGym() ? 'Plano de ginásio para ganhar massa e definir, ajustado a quantas vezes treinas.' : 'Plano em casa para ganhar massa e definir, ajustado a quantas vezes treinas.'}</p></div></header>
     ${modeSwitch()}
+    ${planEdit ? '' : `<section class="card freq"><div class="sec-h in"><h3>Quantas vezes por semana?</h3></div>
+      <div class="seg freq-seg" role="radiogroup" aria-label="Treinos por semana">${[2, 3, 4, 5, 6].map(n => `<button type="button" role="radio" aria-checked="${planFreq() === n}" class="${planFreq() === n ? 'on' : ''}" data-freq="${n}">${n}×</button>`).join('')}</div>
+      <p class="muted small">${S.plans && S.plans[S.mode] ? 'Estás a usar um plano personalizado. Escolhe um número para voltar a um plano sugerido.' : PLAN_WHY[Math.min(7, S.goal || 4)]}</p></section>`}
     ${planEdit ? planEditor() : `<div class="sec-h"><h3>A tua semana</h3><button class="btn ghost sm edit-plan" data-planedit>${ic('edit')} Editar plano</button></div>
     ${S.plans && S.plans[S.mode] ? '<p class="muted small plan-custom">Plano personalizado por ti.</p>' : ''}
     <div class="wk-prog"><div class="wk-t"><b>Esta semana</b><span><b>${doneDays}</b>/${planned} treino${planned === 1 ? '' : 's'}</span></div><div class="mini-bar"><i style="width:${planned ? Math.min(100, doneDays / planned * 100) : 0}%"></i></div><small class="muted">Recomeça todas as segundas-feiras.</small></div>
@@ -593,7 +604,7 @@ const VIEWS = {
         <button class="btn ghost full mtoggle" data-medals aria-expanded="${medalsOpen}">${medalsOpen ? 'Mostrar menos' : `Ver todas as medalhas <span class="mt-n">+${A.length - N}</span>`}<svg class="ic mchev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></section>`; })()}
     <section class="card"><div class="sec-h in"><h3>Últimas 10 semanas</h3><span class="muted small">cada coluna = 1 semana</span></div>
       <div class="heat">${cells}</div></section>
-    <section class="card goal"><div><h3>Objetivo semanal</h3><p class="muted small">Para ganhar massa: 4–6 treinos por semana.</p></div>
+    <section class="card goal"><div><h3>Objetivo semanal</h3><p class="muted small">Muda também o plano sugerido. Para ganhar massa: 3–5 treinos por semana.</p></div>
       <div class="stepper"><button data-goal="-1" aria-label="Menos">−</button><b>${S.goal}</b><button data-goal="1" aria-label="Mais">+</button></div></section>`;
   },
 
@@ -1118,6 +1129,12 @@ document.addEventListener('click', ev => {
   }
   if ('mclose' in d) return closeEx();
   if (d.goal) { S.goal = Math.min(7, Math.max(1, S.goal + +d.goal)); save(); return render(); }
+  if (d.freq) {
+    const n = +d.freq, apply = () => { S.goal = n; if (S.plans) delete S.plans[S.mode]; save(); softRender('.freq-seg'); };
+    if (S.plans && S.plans[S.mode]) return confirmBox({ title: `Usar o plano de ${n} dias?`, text: 'O teu plano personalizado deste modo é substituído pelo plano sugerido.', yes: 'Usar este plano', no: 'Cancelar', icon: 'cal', onYes: apply });
+    if (n === planFreq() && S.goal === n) return;
+    return apply();
+  }
   if (t.id === 'clear') return confirmBox({ title: 'Apagar o histórico?', text: `Vais perder ${S.history.length === 1 ? 'o treino registado' : 'os ' + S.history.length + ' treinos registados'}. As medalhas já conquistadas mantêm-se. Isto não dá para desfazer.`, yes: 'Apagar tudo', no: 'Manter', icon: 'trash', danger: true, onYes: () => { S.history = []; save(); render(true); } });
   if ('cno' in d) { const c = $('#confirm'), fn = c._no; c._no = null; return animClose(c, 'modal-close', () => { c.hidden = true; fn && fn(); }); }
   if ('cyes' in d) { const c = $('#confirm'); c.hidden = true; c._yes && c._yes(); return; }
