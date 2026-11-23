@@ -140,6 +140,9 @@ h3{font-size:17px;font-weight:600}
 .plan-open:hover .pinfo b{color:var(--lime)}
 .pinfo b{transition:color .2s}
 .p-more{font-size:12.5px;font-weight:700;color:var(--lime);margin-top:3px;white-space:nowrap;opacity:.85}
+.p-fin{display:inline-flex;align-items:center;gap:6px;margin-top:6px;color:var(--lime);font-size:12.5px;font-weight:700}
+.p-fin .ic{width:14px;height:14px}
+.fin-h{margin-top:18px}
 .plan-x{flex-basis:100%;display:flex;align-items:center;gap:12px;margin:2px 0 0 58px;padding-top:12px;border-top:1px dashed var(--line)}
 .plan-x .plan-open{flex:1;min-width:0}
 .round-btn.sm{width:42px;height:42px}.round-btn.sm .ic{width:18px;height:18px}
@@ -2519,7 +2522,7 @@ const VIEWS = {
   inicio() {
     const d = new Date(), hr = d.getHours();
     const hi = hr < 6 ? 'Boa noite' : hr < 13 ? 'Bom dia' : hr < 20 ? 'Boa tarde' : 'Boa noite';
-    const pd = planDay(d.getDay()), w = WMAP[pd.w], p = plan(w);
+    const pd = planDay(d.getDay()), w = WMAP[pd.w], p = plan(w), fx = pd.extra && WMAP[pd.extra], fa = fx ? `data-fin="${fx.id}"` : '';
     const done = S.history.some(h => h.d === today());
     const wk = weekDays(), set = new Set(S.history.map(h => h.d)), nWeek = wk.filter(x => set.has(dkey(x))).length;
     return `
@@ -2532,9 +2535,10 @@ const VIEWS = {
       <div class="today-txt">
         <span class="eyebrow shim">Treino de hoje · ${esc(pd.focus)}</span>
         <h2>${esc(w.name)}</h2>
-        <div class="chips"><span>${ic('clock')} ${p.min} min</span><span>${ic('fire')} ~${p.kcal} kcal</span><span>${ic('layers')} ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</span></div>
+        <div class="chips"><span>${ic('clock')} ${p.min + (fx ? plan(fx).min : 0)} min</span><span>${ic('fire')} ~${p.kcal} kcal</span><span>${ic('layers')} ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</span></div>
         ${done ? `<p class="done-note">${ic('check')} Já treinaste hoje. Boa!</p>` : ''}
-        <div class="row-btns"><button class="btn lime" data-start="${w.id}">${ic('play')} Começar</button><button class="btn ghost" data-open="${w.id}">Detalhes ${ic('next')}</button></div>
+        ${fx ? `<p class="p-fin">${ic(fx.cat === 'Core' ? 'layers' : 'fire')} Com ${esc(fx.name)} no fim</p>` : ''}
+        <div class="row-btns"><button class="btn lime" data-start="${w.id}" ${fa}>${ic('play')} Começar</button><button class="btn ghost" data-open="${w.id}" ${fa}>Detalhes ${ic('next')}</button></div>
       </div>
     </section>
 
@@ -2602,14 +2606,13 @@ const VIEWS = {
     <div class="list plan">${order.map(d => {
       const pd = myPlan()[d], dn = doneOn(d).length ? 'done' : '';
       if (!pd.w) return `<div class="plan-row rest ${dn} ${d === td ? 'now' : ''}"><span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span><span class="pinfo"><span class="eyebrow">Descanso</span><b>Dia de descanso</b><small>Recupera. Se quiseres, faz a Mobilidade.</small>${doneTag(d)}</span><button class="round-btn ghost-rb" data-open="mobility" aria-label="Ver mobilidade">${ic('next')}</button></div>`;
-      const w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null;
+      const w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null, xm = x ? plan(x).min : 0, fa = x ? `data-fin="${x.id}"` : '';
       return `<div class="plan-row ${dn} ${d === td ? 'now' : ''}">
-        <button class="plan-open" data-open="${w.id}" aria-label="Ver detalhes de ${esc(w.name)}">
+        <button class="plan-open" data-open="${w.id}" ${fa} aria-label="Ver detalhes de ${esc(w.name)}">
           <span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span>
-          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${doneTag(d)}</span>
+          <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min + xm} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${x ? `<span class="p-fin">${ic(x.cat === 'Core' ? 'layers' : 'fire')} Com ${esc(x.name)} no fim</span>` : ''}${doneTag(d)}</span>
         </button>
-        <button class="round-btn ghost-rb" data-open="${w.id}" aria-label="Ver ${esc(w.name)}">${ic('next')}</button>
-        ${x ? (() => { const px = plan(x); return `<div class="plan-x"><button class="plan-open" data-open="${x.id}" aria-label="Ver detalhes de ${esc(x.name)}"><span class="pinfo"><span class="eyebrow">2.º treino · ${esc(x.cat === 'HIIT' ? 'Cardio' : x.cat)}</span><b>${esc(x.name)}</b><small>${px.min} min · ${px.gym ? px.sets + ' séries' : px.rounds + ' voltas'}</small></span></button><button class="round-btn ghost-rb sm" data-open="${x.id}" aria-label="Ver ${esc(x.name)}">${ic('next')}</button></div>`; })() : ''}
+        <button class="round-btn ghost-rb" data-open="${w.id}" ${fa} aria-label="Ver ${esc(w.name)}">${ic('next')}</button>
       </div>`;
     }).join('')}</div>`}
     <section class="card">
@@ -2738,8 +2741,9 @@ function calc() {
 }
 
 /* ===== Detalhe do treino ===== */
-function openWorkout(id) {
+function openWorkout(id, fin) {
   const w = WMAP[id]; if (!w) return;
+  const fw = fin && WMAP[fin] ? WMAP[fin] : null;
   const sheet = $('#sheet');
   const draw = () => {
     const p = plan(w);
@@ -2747,7 +2751,7 @@ function openWorkout(id) {
       <div class="hero"><div class="hero-fig" data-fig="${w.items[0][0]}"></div>
         <button class="icon-btn back" data-close aria-label="Voltar">${ic('back')}</button>
         <div class="hero-txt"><span class="tag">${esc(w.cat)}</span><h2>${esc(w.name)}</h2>
-        <div class="chips"><span>${ic('clock')} ${p.min} min</span><span>${ic('fire')} ~${p.kcal} kcal</span><span>${ic('layers')} ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</span></div></div></div>
+        <div class="chips"><span>${ic('clock')} ${p.min + (fw ? plan(fw).min : 0)} min</span><span>${ic('fire')} ~${p.kcal} kcal</span><span>${ic('layers')} ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</span></div></div></div>
       <div class="pad">
         <h3>Sobre</h3><p class="muted">${esc(w.desc)}</p>
         <h3>Nível</h3>
@@ -2758,8 +2762,11 @@ function openWorkout(id) {
           <label class="tg"><input type="checkbox" id="tg-cool" ${S.cool ? 'checked' : ''}><span class="sw"></span><div><b>Alongamento final</b><small>${COOLDOWN.length} exercícios · 2 min</small></div></label></div>`}
         <div class="sec-h"><h3>Exercícios</h3><span class="muted small">${p.gym ? `${p.items.length} exercícios · ${p.sets} séries` : `${p.items.length} exercícios × ${p.rounds} voltas`}</span></div>
         <div class="list tl">${p.items.map((it, i) => exRow(it.ex, amtTxt(it), i)).join('')}</div>
+        ${fw ? (() => { const q = plan(fw); return `<div class="sec-h fin-h"><h3>No fim: ${esc(fw.name)}</h3><span class="muted small">${q.min} min · ${q.gym ? q.sets + ' séries' : q.rounds + ' voltas'}</span></div>
+          <p class="muted small">Faz parte do treino de hoje: começa logo a seguir, sem sair do treino.</p>
+          <div class="list tl">${q.items.map((it, i) => exRow(it.ex, amtTxt(it), p.items.length + i)).join('')}</div>`; })() : ''}
       </div>
-      <div class="sticky"><button class="btn lime full" data-start="${w.id}">${ic('play')} Começar treino</button></div></div>`;
+      <div class="sticky"><button class="btn lime full" data-start="${w.id}" ${fw ? `data-fin="${fw.id}"` : ''}>${ic('play')} Começar treino</button></div></div>`;
     sheet.querySelectorAll('[data-fig]').forEach(n => makeFigure(n, n.dataset.fig, { phase: +n.dataset.phase || 0 }));
   };
   draw(); sheet._redraw = draw;
@@ -2906,8 +2913,8 @@ function lineRest(s, nx) {
   if (s.roundEnd) return pick([`Volta ${s.r + 1} feita! Bebe um pouco de água. A seguir, ${n}.`, `Grande volta! Recupera bem. Depois vem ${n}.`]);
   return pick([`Boa! Respira. A seguir, ${n}.`, `Muito bem. Descansa um pouco, depois vem ${n}.`, `Isso mesmo! Agora recupera. Próximo: ${n}.`, `Bom trabalho. Respira fundo, a seguir temos ${n}.`]);
 }
-function startWorkout(id) {
-  const w = WMAP[id], L = lvl(), p = plan(w, L);
+function startWorkout(id, fin) {
+  const w = WMAP[id], L = lvl(), p = plan(w, L), fw = fin && WMAP[fin] && fin !== id ? WMAP[fin] : null;
   const extra = !noExtras(w);
   const steps = [];
   if (extra && S.warm) {
@@ -2927,11 +2934,18 @@ function startWorkout(id) {
     const last = i === p.items.length - 1;
     if (!(last && r === p.rounds - 1)) steps.push({ k: 'rest', dur: last ? p.rr : p.rest, r, i, roundEnd: last });
   });
+  /* parte final do treino de hoje (core ou cardio), seguida sem sair do treino */
+  if (fw) {
+    const q = plan(fw, L), tag = { blk: fw.name, R: q.rounds, N: q.items.length };
+    steps.push({ k: 'rest', dur: 45, label: 'Agora: ' + fw.name });
+    if (q.gym) q.items.forEach((it, i) => { for (let s = 0; s < it.sets; s++) { steps.push({ k: 'work', ...it, ...tag, r: 0, i, set: s }); const lastSet = s === it.sets - 1, lastEx = i === q.items.length - 1; if (!(lastSet && lastEx)) steps.push({ k: 'rest', dur: lastSet ? Math.max(q.rr, it.rest) : it.rest, r: 0, i, set: s, exEnd: lastSet }); } });
+    else for (let r = 0; r < q.rounds; r++) q.items.forEach((it, i) => { steps.push({ k: 'work', ...it, ...tag, r, i }); const last = i === q.items.length - 1; if (!(last && r === q.rounds - 1)) steps.push({ k: 'rest', dur: last ? q.rr : q.rest, r, i, roundEnd: last }); });
+  }
   if (extra && S.cool) {
     steps.push({ k: 'rest', dur: 10, label: 'Treino feito! Vamos alongar', cool: true });
     COOLDOWN.forEach(([ex, s, side]) => steps.push({ k: 'work', ex, mode: 't', amt: side ? s / 2 : s, side: !!side, phase: 'cool' }));
   }
-  PL = { w, L, p, steps, idx: 0, left: 0, el: 0, paused: false, t0: Date.now(), last: performance.now(), workCount: steps.filter(s => s.k === 'work' && !s.phase).length, done: { reps: {}, sec: {} }, loads: {}, prs: [], log: {} };
+  PL = { w, fw, L, p, steps, idx: 0, left: 0, el: 0, paused: false, t0: Date.now(), last: performance.now(), workCount: steps.filter(s => s.k === 'work' && !s.phase).length, done: { reps: {}, sec: {} }, loads: {}, prs: [], log: {} };
   closeSheet(true);
   $('#player').hidden = false; document.body.classList.add('lock');
   requestWake();
@@ -3020,7 +3034,7 @@ function drawPlayer() {
   const doneWork = P.steps.slice(0, P.idx).filter(x => x.k === 'work').length;
   const wi = s.k === 'work' ? s : P.steps[nextWorkIdx(P.idx)];
   const phase = wi && wi.phase;
-  const sub = phase === 'warm' ? 'Aquecimento' : phase === 'cool' ? 'Alongamento final' : wi && wi.sets ? `Exercício ${wi.i + 1}/${P.p.items.length} · Série ${wi.set + 1}/${wi.sets}` : `Volta ${(wi ? wi.r : 0) + 1}/${P.p.rounds}`;
+  const sub = phase === 'warm' ? 'Aquecimento' : phase === 'cool' ? 'Alongamento final' : (wi && wi.blk ? wi.blk + ' · ' : '') + (wi && wi.sets ? `Exercício ${wi.i + 1}/${wi.N || P.p.items.length} · Série ${wi.set + 1}/${wi.sets}` : `Volta ${(wi ? wi.r : 0) + 1}/${wi && wi.R || P.p.rounds}`);
   const head = `<div class="pl-top"><button class="icon-btn" data-quit aria-label="Sair do treino">${ic('x')}</button>
       <div class="pl-title"><b>${esc(P.w.name)}</b><small>${sub} · ${P.L.label}</small></div>
       <div class="pl-tog"><button class="icon-btn ${S.voice ? '' : 'off'}" data-voice aria-label="Voz">${ic('voice')}</button><button class="icon-btn ${S.sound ? '' : 'off'}" data-sound aria-label="Som">${ic(S.sound ? 'sound' : 'mute')}</button></div></div>
@@ -3179,8 +3193,8 @@ document.addEventListener('click', ev => {
   const d = t.dataset;
   if (d.go) return go(d.go);
   if (d.mode) { if (S.mode !== d.mode) { S.mode = d.mode; planEdit = false; PDRAFT = null; save(); softRender('.mode'); } return; }
-  if (d.open) return openWorkout(d.open);
-  if (d.start) return startWorkout(d.start);
+  if (d.open) return openWorkout(d.open, d.fin);
+  if (d.start) return startWorkout(d.start, d.fin);
   if (d.ex) return openEx(d.ex);
   if (d.exinfo) { if (PL && !PL.paused) { PL.paused = true; PL.autoPause = true; drawPlayer(); } return openEx(d.exinfo); }
   if (d.cat !== undefined) { filterCat = d.cat; libTab = 'treinos'; return go('treinos'); }
@@ -3300,7 +3314,7 @@ render(true);
   setTimeout(() => sp.remove(), 2200);
 })();
 
-document.getElementById('fab').addEventListener('click', () => openWorkout(planDay(new Date().getDay()).w));
+document.getElementById('fab').addEventListener('click', () => { const pd = planDay(new Date().getDay()); openWorkout(pd.w, pd.extra); });
 </script>
 </body>
 </html>

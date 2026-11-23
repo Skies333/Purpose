@@ -140,6 +140,9 @@ h3{font-size:17px;font-weight:600}
 .plan-open:hover .pinfo b{color:var(--lime)}
 .pinfo b{transition:color .2s}
 .p-more{font-size:12.5px;font-weight:700;color:var(--lime);margin-top:3px;white-space:nowrap;opacity:.85}
+.p-fin{display:inline-flex;align-items:center;gap:6px;margin-top:6px;color:var(--lime);font-size:12.5px;font-weight:700}
+.p-fin .ic{width:14px;height:14px}
+.fin-h{margin-top:18px}
 .plan-x{flex-basis:100%;display:flex;align-items:center;gap:12px;margin:2px 0 0 58px;padding-top:12px;border-top:1px dashed var(--line)}
 .plan-x .plan-open{flex:1;min-width:0}
 .round-btn.sm{width:42px;height:42px}.round-btn.sm .ic{width:18px;height:18px}
@@ -860,7 +863,7 @@ body.noselect{user-select:none;-webkit-user-select:none}
 /*GYM*/
 /*CLOUD*/
 /*APP*/
-document.getElementById('fab').addEventListener('click', () => openWorkout(planDay(new Date().getDay()).w));
+document.getElementById('fab').addEventListener('click', () => { const pd = planDay(new Date().getDay()); openWorkout(pd.w, pd.extra); });
 </script>
 </body>
 </html>
