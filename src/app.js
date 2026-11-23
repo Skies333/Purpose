@@ -106,7 +106,7 @@ function repTop(id, base, mode) {
 const progTarget = (id, base) => base;
 const STAGE_TXT = (id, st) => st === 1 ? 'Desce em 3 segundos em cada repetição' : st >= 2 ? (EX[id].harder || 'Versão mais difícil') : '';
 /* sessões de core e mobilidade não levam aquecimento nem alongamento automáticos (são feitas a seguir ao treino ou em dias leves) */
-const noExtras = w => w.cat === 'Core' || w.cat === 'Mobilidade';
+const noExtras = w => w.cat === 'Core' || w.cat === 'Mobilidade' || w.id === 'tabata';
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
 function modeSwitch(compact) {
@@ -578,7 +578,7 @@ const VIEWS = {
           <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${doneTag(d) || '<span class="p-more">Ver detalhes ›</span>'}</span>
         </button>
         <button class="round-btn" data-start="${w.id}" aria-label="Começar ${esc(w.name)}">${ic('play')}</button>
-        ${x ? `<button class="plan-extra" data-open="${x.id}"><span>+ ${esc(x.name)}</span><small>${plan(x).min} min ›</small></button>` : ''}
+        ${x ? (() => { const px = plan(x); return `<div class="plan-x"><button class="plan-open" data-open="${x.id}" aria-label="Ver detalhes de ${esc(x.name)}"><span class="pinfo"><span class="eyebrow">2.º treino · ${esc(x.cat === 'HIIT' ? 'Cardio' : x.cat)}</span><b>${esc(x.name)}</b><small>${px.min} min · ${px.gym ? px.sets + ' séries' : px.rounds + ' voltas'}</small></span></button><button class="round-btn sm" data-start="${x.id}" aria-label="Começar ${esc(x.name)}">${ic('play')}</button></div>`; })() : ''}
       </div>`;
     }).join('')}</div>`}
     <section class="card">

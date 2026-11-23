@@ -87,15 +87,15 @@ const LEVELS = [
 /* Planos semanais por número de treinos (0 = domingo). Dias sem treino = descanso (com mobilidade opcional).
    "extra" é uma sessão curta feita a seguir ao treino do dia (core ou cardio). */
 const PLANS = {
-  1: { 3: { w: 'fullA', focus: 'Corpo inteiro + core', extra: 'core' } },
-  2: { 1: { w: 'fullA', focus: 'Corpo inteiro + core', extra: 'core' }, 4: { w: 'fullB', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  3: { 1: { w: 'fullA', focus: 'Corpo inteiro + core', extra: 'core' }, 3: { w: 'fullB', focus: 'Corpo inteiro + cardio', extra: 'tabata' }, 5: { w: 'fullC', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  4: { 1: { w: 'upperA', focus: 'Parte de cima' }, 2: { w: 'legs', focus: 'Pernas + core', extra: 'core' },
-       4: { w: 'upper', focus: 'Parte de cima + cardio', extra: 'tabata' }, 5: { w: 'legs2', focus: 'Pernas + core', extra: 'coreB' } },
-  5: { 1: { w: 'push', focus: 'Empurrar + cardio', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar + core', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
-       5: { w: 'upper', focus: 'Parte de cima + core', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
-  6: { 1: { w: 'push', focus: 'Empurrar + cardio', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar + core', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
-       4: { w: 'pushB', focus: 'Empurrar' }, 5: { w: 'pullB', focus: 'Puxar + core', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
+  1: { 3: { w: 'fullA', focus: 'Corpo inteiro', extra: 'core' } },
+  2: { 1: { w: 'fullA', focus: 'Corpo inteiro', extra: 'core' }, 4: { w: 'fullB', focus: 'Corpo inteiro', extra: 'coreB' } },
+  3: { 1: { w: 'fullA', focus: 'Corpo inteiro', extra: 'core' }, 3: { w: 'fullB', focus: 'Corpo inteiro', extra: 'tabata' }, 5: { w: 'fullC', focus: 'Corpo inteiro', extra: 'coreB' } },
+  4: { 1: { w: 'upperA', focus: 'Parte de cima' }, 2: { w: 'legs', focus: 'Pernas', extra: 'core' },
+       4: { w: 'upper', focus: 'Parte de cima', extra: 'tabata' }, 5: { w: 'legs2', focus: 'Pernas', extra: 'coreB' } },
+  5: { 1: { w: 'push', focus: 'Empurrar', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
+       5: { w: 'upper', focus: 'Parte de cima', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
+  6: { 1: { w: 'push', focus: 'Empurrar', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
+       4: { w: 'pushB', focus: 'Empurrar' }, 5: { w: 'pullB', focus: 'Puxar', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
 };
 const PLAN = PLANS[6];
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -152,15 +152,15 @@ WORKOUTS.push(
 WORKOUTS.forEach(w => { w.place = w.place || 'casa'; WMAP[w.id] = w; });
 const CATS_GYM = ['Todos', 'Corpo inteiro', 'Parte de cima', 'Peito & Tríceps', 'Costas & Bíceps', 'Ombros & Braços', 'Pernas', 'Core'];
 const PLANS_GYM = {
-  1: { 3: { w: 'gfull', focus: 'Corpo inteiro + core', extra: 'gcore' } },
-  2: { 1: { w: 'gfull', focus: 'Corpo inteiro + core', extra: 'gcore' }, 4: { w: 'gfullB', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  3: { 1: { w: 'gfull', focus: 'Corpo inteiro + core', extra: 'gcore' }, 3: { w: 'gfullB', focus: 'Corpo inteiro' }, 5: { w: 'gfullC', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  4: { 1: { w: 'gupperA', focus: 'Parte de cima' }, 2: { w: 'glegs', focus: 'Pernas + core', extra: 'gcore' },
-       4: { w: 'gupper', focus: 'Parte de cima' }, 5: { w: 'glegs2', focus: 'Pernas + core', extra: 'coreB' } },
-  5: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar + core', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
-       5: { w: 'gupper', focus: 'Parte de cima + core', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
-  6: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar + core', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
-       4: { w: 'gpush2', focus: 'Empurrar' }, 5: { w: 'gpull2', focus: 'Puxar + core', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
+  1: { 3: { w: 'gfull', focus: 'Corpo inteiro', extra: 'gcore' } },
+  2: { 1: { w: 'gfull', focus: 'Corpo inteiro', extra: 'gcore' }, 4: { w: 'gfullB', focus: 'Corpo inteiro', extra: 'coreB' } },
+  3: { 1: { w: 'gfull', focus: 'Corpo inteiro', extra: 'gcore' }, 3: { w: 'gfullB', focus: 'Corpo inteiro' }, 5: { w: 'gfullC', focus: 'Corpo inteiro', extra: 'coreB' } },
+  4: { 1: { w: 'gupperA', focus: 'Parte de cima' }, 2: { w: 'glegs', focus: 'Pernas', extra: 'gcore' },
+       4: { w: 'gupper', focus: 'Parte de cima' }, 5: { w: 'glegs2', focus: 'Pernas', extra: 'coreB' } },
+  5: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
+       5: { w: 'gupper', focus: 'Parte de cima', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
+  6: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
+       4: { w: 'gpush2', focus: 'Empurrar' }, 5: { w: 'gpull2', focus: 'Puxar', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
 };
 const PLAN_GYM = PLANS_GYM[5];
 /* como cada frequência está organizada (mostrado no plano) */

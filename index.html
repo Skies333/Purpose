@@ -140,6 +140,9 @@ h3{font-size:17px;font-weight:600}
 .plan-open:hover .pinfo b{color:var(--lime)}
 .pinfo b{transition:color .2s}
 .p-more{font-size:12.5px;font-weight:700;color:var(--lime);margin-top:3px;white-space:nowrap;opacity:.85}
+.plan-x{flex-basis:100%;display:flex;align-items:center;gap:12px;margin:2px 0 0 58px;padding-top:12px;border-top:1px dashed var(--line)}
+.plan-x .plan-open{flex:1;min-width:0}
+.round-btn.sm{width:42px;height:42px}.round-btn.sm .ic{width:18px;height:18px}
 .plan-extra{flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-left:58px;padding:10px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-size:14px;font-weight:600;text-align:left;transition:border-color .2s}
 .plan-extra small{color:var(--muted);font-size:12.5px;font-weight:500;white-space:nowrap}
 .plan-extra:hover{border-color:var(--lime)}
@@ -1488,15 +1491,15 @@ const LEVELS = [
 /* Planos semanais por número de treinos (0 = domingo). Dias sem treino = descanso (com mobilidade opcional).
    "extra" é uma sessão curta feita a seguir ao treino do dia (core ou cardio). */
 const PLANS = {
-  1: { 3: { w: 'fullA', focus: 'Corpo inteiro + core', extra: 'core' } },
-  2: { 1: { w: 'fullA', focus: 'Corpo inteiro + core', extra: 'core' }, 4: { w: 'fullB', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  3: { 1: { w: 'fullA', focus: 'Corpo inteiro + core', extra: 'core' }, 3: { w: 'fullB', focus: 'Corpo inteiro + cardio', extra: 'tabata' }, 5: { w: 'fullC', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  4: { 1: { w: 'upperA', focus: 'Parte de cima' }, 2: { w: 'legs', focus: 'Pernas + core', extra: 'core' },
-       4: { w: 'upper', focus: 'Parte de cima + cardio', extra: 'tabata' }, 5: { w: 'legs2', focus: 'Pernas + core', extra: 'coreB' } },
-  5: { 1: { w: 'push', focus: 'Empurrar + cardio', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar + core', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
-       5: { w: 'upper', focus: 'Parte de cima + core', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
-  6: { 1: { w: 'push', focus: 'Empurrar + cardio', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar + core', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
-       4: { w: 'pushB', focus: 'Empurrar' }, 5: { w: 'pullB', focus: 'Puxar + core', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
+  1: { 3: { w: 'fullA', focus: 'Corpo inteiro', extra: 'core' } },
+  2: { 1: { w: 'fullA', focus: 'Corpo inteiro', extra: 'core' }, 4: { w: 'fullB', focus: 'Corpo inteiro', extra: 'coreB' } },
+  3: { 1: { w: 'fullA', focus: 'Corpo inteiro', extra: 'core' }, 3: { w: 'fullB', focus: 'Corpo inteiro', extra: 'tabata' }, 5: { w: 'fullC', focus: 'Corpo inteiro', extra: 'coreB' } },
+  4: { 1: { w: 'upperA', focus: 'Parte de cima' }, 2: { w: 'legs', focus: 'Pernas', extra: 'core' },
+       4: { w: 'upper', focus: 'Parte de cima', extra: 'tabata' }, 5: { w: 'legs2', focus: 'Pernas', extra: 'coreB' } },
+  5: { 1: { w: 'push', focus: 'Empurrar', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
+       5: { w: 'upper', focus: 'Parte de cima', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
+  6: { 1: { w: 'push', focus: 'Empurrar', extra: 'tabata' }, 2: { w: 'pull', focus: 'Puxar', extra: 'core' }, 3: { w: 'legs', focus: 'Pernas' },
+       4: { w: 'pushB', focus: 'Empurrar' }, 5: { w: 'pullB', focus: 'Puxar', extra: 'coreB' }, 6: { w: 'legs2', focus: 'Pernas' } },
 };
 const PLAN = PLANS[6];
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -1553,15 +1556,15 @@ WORKOUTS.push(
 WORKOUTS.forEach(w => { w.place = w.place || 'casa'; WMAP[w.id] = w; });
 const CATS_GYM = ['Todos', 'Corpo inteiro', 'Parte de cima', 'Peito & Tríceps', 'Costas & Bíceps', 'Ombros & Braços', 'Pernas', 'Core'];
 const PLANS_GYM = {
-  1: { 3: { w: 'gfull', focus: 'Corpo inteiro + core', extra: 'gcore' } },
-  2: { 1: { w: 'gfull', focus: 'Corpo inteiro + core', extra: 'gcore' }, 4: { w: 'gfullB', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  3: { 1: { w: 'gfull', focus: 'Corpo inteiro + core', extra: 'gcore' }, 3: { w: 'gfullB', focus: 'Corpo inteiro' }, 5: { w: 'gfullC', focus: 'Corpo inteiro + core', extra: 'coreB' } },
-  4: { 1: { w: 'gupperA', focus: 'Parte de cima' }, 2: { w: 'glegs', focus: 'Pernas + core', extra: 'gcore' },
-       4: { w: 'gupper', focus: 'Parte de cima' }, 5: { w: 'glegs2', focus: 'Pernas + core', extra: 'coreB' } },
-  5: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar + core', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
-       5: { w: 'gupper', focus: 'Parte de cima + core', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
-  6: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar + core', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
-       4: { w: 'gpush2', focus: 'Empurrar' }, 5: { w: 'gpull2', focus: 'Puxar + core', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
+  1: { 3: { w: 'gfull', focus: 'Corpo inteiro', extra: 'gcore' } },
+  2: { 1: { w: 'gfull', focus: 'Corpo inteiro', extra: 'gcore' }, 4: { w: 'gfullB', focus: 'Corpo inteiro', extra: 'coreB' } },
+  3: { 1: { w: 'gfull', focus: 'Corpo inteiro', extra: 'gcore' }, 3: { w: 'gfullB', focus: 'Corpo inteiro' }, 5: { w: 'gfullC', focus: 'Corpo inteiro', extra: 'coreB' } },
+  4: { 1: { w: 'gupperA', focus: 'Parte de cima' }, 2: { w: 'glegs', focus: 'Pernas', extra: 'gcore' },
+       4: { w: 'gupper', focus: 'Parte de cima' }, 5: { w: 'glegs2', focus: 'Pernas', extra: 'coreB' } },
+  5: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
+       5: { w: 'gupper', focus: 'Parte de cima', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
+  6: { 1: { w: 'gpush', focus: 'Empurrar' }, 2: { w: 'gpull', focus: 'Puxar', extra: 'gcore' }, 3: { w: 'glegs', focus: 'Pernas' },
+       4: { w: 'gpush2', focus: 'Empurrar' }, 5: { w: 'gpull2', focus: 'Puxar', extra: 'coreB' }, 6: { w: 'glegs2', focus: 'Pernas' } },
 };
 const PLAN_GYM = PLANS_GYM[5];
 /* como cada frequência está organizada (mostrado no plano) */
@@ -2134,7 +2137,7 @@ function repTop(id, base, mode) {
 const progTarget = (id, base) => base;
 const STAGE_TXT = (id, st) => st === 1 ? 'Desce em 3 segundos em cada repetição' : st >= 2 ? (EX[id].harder || 'Versão mais difícil') : '';
 /* sessões de core e mobilidade não levam aquecimento nem alongamento automáticos (são feitas a seguir ao treino ou em dias leves) */
-const noExtras = w => w.cat === 'Core' || w.cat === 'Mobilidade';
+const noExtras = w => w.cat === 'Core' || w.cat === 'Mobilidade' || w.id === 'tabata';
 const loadStep = id => ['db', 'db-front'].includes(EX[id].hold) ? 1 : 2.5;
 const kg = v => (Math.round(v * 10) / 10).toLocaleString('pt-PT');
 function modeSwitch(compact) {
@@ -2606,7 +2609,7 @@ const VIEWS = {
           <span class="pinfo"><span class="eyebrow">${esc(pd.focus)}</span><b>${esc(w.name)}</b><small>${p.min} min · ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</small>${doneTag(d) || '<span class="p-more">Ver detalhes ›</span>'}</span>
         </button>
         <button class="round-btn" data-start="${w.id}" aria-label="Começar ${esc(w.name)}">${ic('play')}</button>
-        ${x ? `<button class="plan-extra" data-open="${x.id}"><span>+ ${esc(x.name)}</span><small>${plan(x).min} min ›</small></button>` : ''}
+        ${x ? (() => { const px = plan(x); return `<div class="plan-x"><button class="plan-open" data-open="${x.id}" aria-label="Ver detalhes de ${esc(x.name)}"><span class="pinfo"><span class="eyebrow">2.º treino · ${esc(x.cat === 'HIIT' ? 'Cardio' : x.cat)}</span><b>${esc(x.name)}</b><small>${px.min} min · ${px.gym ? px.sets + ' séries' : px.rounds + ' voltas'}</small></span></button><button class="round-btn sm" data-start="${x.id}" aria-label="Começar ${esc(x.name)}">${ic('play')}</button></div>`; })() : ''}
       </div>`;
     }).join('')}</div>`}
     <section class="card">
