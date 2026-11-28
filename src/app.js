@@ -1081,7 +1081,6 @@ function finish() {
   const stat = (v, lbl, pre = '') => `<div class="f-st"><b>${pre}<span data-to="${v}">${RM ? v : 0}</span></b><small>${lbl}</small></div>`;
   let k = 0; const nx = () => `style="--d:${k++}"`;
   $('#player').innerHTML = `<div class="fin2" role="dialog" aria-modal="true" aria-label="Treino concluído">
-    <div class="f-rays" aria-hidden="true"></div>
     <div class="f-in">
       <div class="f-top"><span class="f-eye">Treino concluído</span><span class="f-date">${esc(dstr)}</span></div>
       <div class="f-hero">
