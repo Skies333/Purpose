@@ -695,6 +695,19 @@ body.noselect{user-select:none;-webkit-user-select:none}
 .pl-ctrl{position:sticky;bottom:0}
 @media (max-height:820px){.pl-cues li:nth-child(n+2),.pl-hint{display:none}.pl-in{gap:10px}}
 @media (max-height:700px){.pl-cues{display:none}.pl-in>.pl-stage{min-height:100px}.pl-in{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom))}}
+/* sequência */
+.streak-card{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center}
+.sk-ic{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:var(--surface2);color:var(--muted)}
+.sk-ic .ic{width:26px;height:26px}
+.streak-card .sk-main b,.streak-card .sk-best b{font-family:var(--display);font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.05;display:block}
+.streak-card i{font-style:normal;font-size:14px;font-weight:600;color:var(--muted)}
+.streak-card small{color:var(--muted);font-size:12.5px;font-weight:600}
+.sk-best{text-align:right}.sk-best b{font-size:22px!important;color:var(--muted)}
+.sk-bar{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.streak-card.rec .sk-ic,.streak-card:has(.sk-main span:not([data-count="0"])) .sk-ic{background:rgba(214,245,61,.14);color:var(--lime)}
+.streak-card.rec .sk-best b{color:var(--lime)}
+.streak-card.rec .sk-ic .ic{animation:flick 1.6s ease-in-out infinite}
+@keyframes flick{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.08) rotate(-4deg)}}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}
@@ -2653,10 +2666,16 @@ const VIEWS = {
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
     <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>Nome, peso, histórico e sincronização</small></div>${ic('next', 'chev')}</button>
+    ${(() => { const cur = streak(), best = Math.max(maxStreak(), cur), rec = cur > 0 && cur >= best, left = best - cur;
+      return `<section class="card streak-card ${rec ? 'rec' : ''}"><div class="sk-ic">${ic('fire')}</div>
+        <div class="sk-main"><small>Sequência atual</small><b><span data-count="${cur}">${cur}</span><i> ${cur === 1 ? 'dia' : 'dias'}</i></b></div>
+        <div class="sk-best"><small>Melhor sequência</small><b><span data-count="${best}">${best}</span><i> ${best === 1 ? 'dia' : 'dias'}</i></b></div>
+        <div class="sk-bar"><div class="mini-bar"><i style="width:${best ? Math.min(100, cur / best * 100) : 0}%"></i></div>
+        <p class="muted small">${!best ? 'Treina hoje para começar a tua sequência.' : rec ? (cur > 1 ? 'Estás no teu recorde! Cada treino a partir de agora bate-o.' : 'Começaste uma sequência. Mantém-na!') : `Faltam ${left} ${left === 1 ? 'dia' : 'dias'} de treino para bateres o teu recorde.`} Os dias de descanso do plano não a quebram.</p></div></section>`; })()}
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
-      <div class="stat"><small>Sequência</small><b><span data-count="${streak()}">${streak()}</span><i> dias</i></b></div>
+      ${(() => { const f = H.length ? H.reduce((m, h) => h.d < m ? h.d : m, '9999') : null, wks = f ? Math.max(1, Math.ceil((Date.now() - new Date(f + 'T12:00')) / 6048e5)) : 1, avg = H.length / wks; return `<div class="stat"><small>Por semana</small><b>${avg.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}<i> treinos</i></b></div>`; })()}
       <div class="stat"><small>kcal (est.)</small><b data-count="${kc}">${kc.toLocaleString('pt-PT')}</b></div>
     </div>
     ${(() => { const A = achievements().sort((x, y) => (y.done - x.done) || (y.cur / y.goal - x.cur / x.goal)), got = A.filter(x => x.done).length, N = 6;

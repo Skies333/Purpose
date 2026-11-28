@@ -611,10 +611,16 @@ const VIEWS = {
     return `
     <header class="top"><div><h1>Progresso</h1><p class="muted">Constância vence motivação.</p></div></header>
     <button class="card acc-link" data-go="conta">${avatar(44)}<div><b>${S.name ? esc(S.name) : 'A tua conta'}</b><small>Nome, peso, histórico e sincronização</small></div>${ic('next', 'chev')}</button>
+    ${(() => { const cur = streak(), best = Math.max(maxStreak(), cur), rec = cur > 0 && cur >= best, left = best - cur;
+      return `<section class="card streak-card ${rec ? 'rec' : ''}"><div class="sk-ic">${ic('fire')}</div>
+        <div class="sk-main"><small>Sequência atual</small><b><span data-count="${cur}">${cur}</span><i> ${cur === 1 ? 'dia' : 'dias'}</i></b></div>
+        <div class="sk-best"><small>Melhor sequência</small><b><span data-count="${best}">${best}</span><i> ${best === 1 ? 'dia' : 'dias'}</i></b></div>
+        <div class="sk-bar"><div class="mini-bar"><i style="width:${best ? Math.min(100, cur / best * 100) : 0}%"></i></div>
+        <p class="muted small">${!best ? 'Treina hoje para começar a tua sequência.' : rec ? (cur > 1 ? 'Estás no teu recorde! Cada treino a partir de agora bate-o.' : 'Começaste uma sequência. Mantém-na!') : `Faltam ${left} ${left === 1 ? 'dia' : 'dias'} de treino para bateres o teu recorde.`} Os dias de descanso do plano não a quebram.</p></div></section>`; })()}
     <div class="stats">
       <div class="stat"><small>Treinos</small><b data-count="${H.length}">${H.length}</b></div>
       <div class="stat"><small>Minutos</small><b data-count="${mins}">${mins}</b></div>
-      <div class="stat"><small>Sequência</small><b><span data-count="${streak()}">${streak()}</span><i> dias</i></b></div>
+      ${(() => { const f = H.length ? H.reduce((m, h) => h.d < m ? h.d : m, '9999') : null, wks = f ? Math.max(1, Math.ceil((Date.now() - new Date(f + 'T12:00')) / 6048e5)) : 1, avg = H.length / wks; return `<div class="stat"><small>Por semana</small><b>${avg.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}<i> treinos</i></b></div>`; })()}
       <div class="stat"><small>kcal (est.)</small><b data-count="${kc}">${kc.toLocaleString('pt-PT')}</b></div>
     </div>
     ${(() => { const A = achievements().sort((x, y) => (y.done - x.done) || (y.cur / y.goal - x.cur / x.goal)), got = A.filter(x => x.done).length, N = 6;

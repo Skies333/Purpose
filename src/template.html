@@ -695,6 +695,19 @@ body.noselect{user-select:none;-webkit-user-select:none}
 .pl-ctrl{position:sticky;bottom:0}
 @media (max-height:820px){.pl-cues li:nth-child(n+2),.pl-hint{display:none}.pl-in{gap:10px}}
 @media (max-height:700px){.pl-cues{display:none}.pl-in>.pl-stage{min-height:100px}.pl-in{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom))}}
+/* sequência */
+.streak-card{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center}
+.sk-ic{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:var(--surface2);color:var(--muted)}
+.sk-ic .ic{width:26px;height:26px}
+.streak-card .sk-main b,.streak-card .sk-best b{font-family:var(--display);font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.05;display:block}
+.streak-card i{font-style:normal;font-size:14px;font-weight:600;color:var(--muted)}
+.streak-card small{color:var(--muted);font-size:12.5px;font-weight:600}
+.sk-best{text-align:right}.sk-best b{font-size:22px!important;color:var(--muted)}
+.sk-bar{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.streak-card.rec .sk-ic,.streak-card:has(.sk-main span:not([data-count="0"])) .sk-ic{background:rgba(214,245,61,.14);color:var(--lime)}
+.streak-card.rec .sk-best b{color:var(--lime)}
+.streak-card.rec .sk-ic .ic{animation:flick 1.6s ease-in-out infinite}
+@keyframes flick{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.08) rotate(-4deg)}}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}
