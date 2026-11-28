@@ -687,6 +687,14 @@ body.noselect{user-select:none;-webkit-user-select:none}
 .fp-row .ic{width:16px;height:16px;flex:none;margin-top:1px}
 .fp-row.up{color:var(--ink)}.fp-row.up .ic{color:var(--lime)}
 .fp-row.big{color:var(--lime);font-weight:700}
+/* jogador cabe no ecrã: a figura encolhe, os botões ficam sempre em baixo */
+.pl-in{height:100dvh;min-height:0}
+.pl-in>.pl-stage{flex:1 1 auto;height:auto;min-height:130px;max-height:320px}
+.pl-in>*{flex-shrink:0}
+.pl-in>.pl-stage{flex-shrink:1}
+.pl-ctrl{position:sticky;bottom:0}
+@media (max-height:820px){.pl-cues li:nth-child(n+2),.pl-hint{display:none}.pl-in{gap:10px}}
+@media (max-height:700px){.pl-cues{display:none}.pl-in>.pl-stage{min-height:100px}.pl-in{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:calc(12px + env(safe-area-inset-bottom))}}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}
