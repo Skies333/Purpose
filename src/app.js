@@ -1184,23 +1184,11 @@ window.addEventListener('popstate', () => {
 const STANDALONE = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
 (() => {
   if (!STANDALONE) return;                        // no Safari normal o iPhone já tem o gesto
-  let x0 = 0, y0 = 0, on = false, dx = 0, ind = null;
+  let x0 = 0, y0 = 0, on = false, dx = 0;
   const canBack = () => $('#player').hidden && (!$('#modal').hidden || !$('#sheet').hidden || route !== 'inicio');
-  addEventListener('touchstart', e => {
-    const t = e.touches[0]; if (t.clientX > 24 || !canBack()) return;
-    on = true; x0 = t.clientX; y0 = t.clientY; dx = 0;
-    ind = ind || Object.assign(document.createElement('div'), { className: 'edge-back', innerHTML: ic('back') });
-    document.body.appendChild(ind); ind.style.top = (y0 - 22) + 'px'; ind.style.setProperty('--x', '0'); ind.classList.remove('go');
-  }, { passive: true });
-  addEventListener('touchmove', e => {
-    if (!on) return; const t = e.touches[0]; dx = t.clientX - x0;
-    if (Math.abs(t.clientY - y0) > 60 && dx < 30) { on = false; ind.remove(); return; }
-    const p = Math.max(0, Math.min(1, dx / 90)); ind.style.setProperty('--x', p); ind.classList.toggle('go', p >= 1);
-  }, { passive: true });
-  addEventListener('touchend', () => {
-    if (!on) return; on = false; const back = dx >= 90; ind.classList.add('out'); setTimeout(() => { ind.remove(); ind.classList.remove('out'); }, 200);
-    if (back) { if (history.length > 1) history.back(); else go('inicio'); }
-  });
+  addEventListener('touchstart', e => { const t = e.touches[0]; if (t.clientX > 24 || !canBack()) return; on = true; x0 = t.clientX; y0 = t.clientY; dx = 0; }, { passive: true });
+  addEventListener('touchmove', e => { if (!on) return; const t = e.touches[0]; dx = t.clientX - x0; if (Math.abs(t.clientY - y0) > 60 && dx < 30) on = false; }, { passive: true });
+  addEventListener('touchend', () => { if (!on) return; on = false; if (dx >= 70) { if (history.length > 1) history.back(); else go('inicio'); } });
 })();
 document.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('[data-card]')) { ev.preventDefault(); ev.target.click(); } });
 document.addEventListener('click', ev => {
