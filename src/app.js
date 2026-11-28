@@ -496,7 +496,7 @@ const VIEWS = {
     <header class="top home"><div><h1>${hi}${S.name ? ', ' + esc(S.name) : ''}!</h1><p class="muted">Treina com propósito. Hoje é ${DAYS[d.getDay()].toLowerCase()}.</p></div></header>
     ${modeSwitch()}
 
-    <section class="today">
+    <section class="today" data-card data-open="${w.id}" ${fa} role="button" tabindex="0" aria-label="Ver detalhes de ${esc(w.name)}">
       <div class="today-fig" data-fig="${w.items[0][0]}"></div>
       <div class="today-txt">
         <span class="eyebrow shim">Treino de hoje · ${esc(pd.focus)}</span>
@@ -504,7 +504,7 @@ const VIEWS = {
         <div class="chips"><span>${ic('clock')} ${p.min + (fx ? plan(fx).min : 0)} min</span><span>${ic('fire')} ~${p.kcal} kcal</span><span>${ic('layers')} ${p.gym ? p.sets + ' séries' : p.rounds + ' voltas'}</span></div>
         ${done ? `<p class="done-note">${ic('check')} Já treinaste hoje. Boa!</p>` : ''}
         ${fx ? `<p class="p-fin">${ic(fx.cat === 'Core' ? 'layers' : 'fire')} Com ${esc(fx.name)} no fim</p>` : ''}
-        <div class="row-btns"><button class="btn lime" data-start="${w.id}" ${fa}>${ic('play')} Começar</button><button class="btn ghost" data-open="${w.id}" ${fa}>Detalhes ${ic('next')}</button></div>
+        <div class="row-btns"><button class="btn lime" data-start="${w.id}" ${fa}>${ic('play')} Começar</button></div>
       </div>
     </section>
 
@@ -571,7 +571,7 @@ const VIEWS = {
     <div class="wk-prog"><div class="wk-t"><b>Esta semana</b><span><b>${doneDays}</b>/${planned} treino${planned === 1 ? '' : 's'}</span></div><div class="mini-bar"><i style="width:${planned ? Math.min(100, doneDays / planned * 100) : 0}%"></i></div><small class="muted">Recomeça todas as segundas-feiras.</small></div>
     <div class="list plan">${order.map(d => {
       const pd = myPlan()[d], dn = doneOn(d).length ? 'done' : '';
-      if (!pd.w) return `<div class="plan-row rest ${dn} ${d === td ? 'now' : ''}"><span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span><span class="pinfo"><span class="eyebrow">Descanso</span><b>Dia de descanso</b><small>Recupera. Se quiseres, faz a Mobilidade.</small>${doneTag(d)}</span><button class="round-btn ghost-rb" data-open="mobility" aria-label="Ver mobilidade">${ic('next')}</button></div>`;
+      if (!pd.w) return `<div class="plan-row rest ${dn} ${d === td ? 'now' : ''}" data-card data-open="mobility" role="button" tabindex="0"><span class="pday"><b>${DAYS[d].slice(0, 3)}</b>${d === td ? '<i>Hoje</i>' : ''}</span><span class="pinfo"><span class="eyebrow">Descanso</span><b>Dia de descanso</b><small>Recupera. Se quiseres, faz a Mobilidade.</small>${doneTag(d)}</span><button class="round-btn ghost-rb" data-open="mobility" aria-label="Ver mobilidade">${ic('next')}</button></div>`;
       const w = WMAP[pd.w], p = plan(w), x = pd.extra ? WMAP[pd.extra] : null, xm = x ? plan(x).min : 0, fa = x ? `data-fin="${x.id}"` : '';
       return `<div class="plan-row ${dn} ${d === td ? 'now' : ''}">
         <button class="plan-open" data-open="${w.id}" ${fa} aria-label="Ver detalhes de ${esc(w.name)}">
@@ -1159,8 +1159,9 @@ function confirmBox(o) {
 }
 
 /* ===== Eventos ===== */
+document.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('[data-card]')) { ev.preventDefault(); ev.target.click(); } });
 document.addEventListener('click', ev => {
-  const t = ev.target.closest('button, [data-ex]'); if (!t) { if (ev.target.id === 'modal') closeEx(); return; }
+  const t = ev.target.closest('button, [data-ex], [data-card]'); if (!t) { if (ev.target.id === 'modal') closeEx(); return; }
   const d = t.dataset;
   if (d.go) return go(d.go);
   if (d.mode) { if (S.mode !== d.mode) { S.mode = d.mode; planEdit = false; PDRAFT = null; save(); softRender('.mode'); } return; }

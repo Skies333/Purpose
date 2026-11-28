@@ -708,6 +708,9 @@ body.noselect{user-select:none;-webkit-user-select:none}
 .streak-card.rec .sk-best b{color:var(--lime)}
 .streak-card.rec .sk-ic .ic{animation:flick 1.6s ease-in-out infinite}
 @keyframes flick{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.08) rotate(-4deg)}}
+[data-card]{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.today[data-card]{transition:transform .2s,border-color .2s}
+.today[data-card]:active{transform:scale(.985)}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}
