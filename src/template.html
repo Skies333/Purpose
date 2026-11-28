@@ -711,6 +711,11 @@ body.noselect{user-select:none;-webkit-user-select:none}
 [data-card]{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .today[data-card]{transition:transform .2s,border-color .2s}
 .today[data-card]:active{transform:scale(.985)}
+.edge-back{position:fixed;left:0;z-index:80;width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;pointer-events:none;
+  transform:translateX(calc(-44px + var(--x) * 58px)) scale(calc(.7 + var(--x) * .3));opacity:calc(var(--x) * 1.2);transition:background .15s,color .15s}
+.edge-back .ic{width:20px;height:20px}
+.edge-back.go{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+.edge-back.out{transition:opacity .2s,transform .2s;opacity:0}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}

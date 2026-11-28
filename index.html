@@ -711,6 +711,11 @@ body.noselect{user-select:none;-webkit-user-select:none}
 [data-card]{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .today[data-card]{transition:transform .2s,border-color .2s}
 .today[data-card]:active{transform:scale(.985)}
+.edge-back{position:fixed;left:0;z-index:80;width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;pointer-events:none;
+  transform:translateX(calc(-44px + var(--x) * 58px)) scale(calc(.7 + var(--x) * .3));opacity:calc(var(--x) * 1.2);transition:background .15s,color .15s}
+.edge-back .ic{width:20px;height:20px}
+.edge-back.go{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+.edge-back.out{transition:opacity .2s,transform .2s;opacity:0}
 /* plano: frequência */
 .freq{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
 .freq-seg{display:grid;grid-template-columns:repeat(5,1fr)}
@@ -3217,6 +3222,49 @@ function confirmBox(o) {
 }
 
 /* ===== Eventos ===== */
+/* ===== Voltar atrás com o gesto (e com o botão "atrás") =====
+   Detalhes e janelas entram no histórico: voltar atrás fecha-os em vez de mudar de página.
+   Na app instalada no ecrã principal o iPhone não tem gesto de voltar, por isso fazemos um: arrastar da margem esquerda. */
+let ovIgnorePop = false, ovPopping = false;
+['modal', 'sheet'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  new MutationObserver(() => {
+    const open = !el.hidden;
+    if (open && el.dataset.ov !== '1') { el.dataset.ov = '1'; history.pushState({ ov: id }, ''); }
+    else if (!open && el.dataset.ov === '1') {
+      el.dataset.ov = '';
+      if (ovPopping) ovPopping = false;
+      else if (history.state && history.state.ov === id) { ovIgnorePop = true; history.back(); }
+    }
+  }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
+});
+window.addEventListener('popstate', () => {
+  if (ovIgnorePop) { ovIgnorePop = false; return; }
+  const m = $('#modal'), s = $('#sheet');
+  if (m && !m.hidden) { ovPopping = true; closeEx(); }
+  else if (s && !s.hidden) { ovPopping = true; closeSheet(); }
+});
+const STANDALONE = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+(() => {
+  if (!STANDALONE) return;                        // no Safari normal o iPhone já tem o gesto
+  let x0 = 0, y0 = 0, on = false, dx = 0, ind = null;
+  const canBack = () => $('#player').hidden && (!$('#modal').hidden || !$('#sheet').hidden || route !== 'inicio');
+  addEventListener('touchstart', e => {
+    const t = e.touches[0]; if (t.clientX > 24 || !canBack()) return;
+    on = true; x0 = t.clientX; y0 = t.clientY; dx = 0;
+    ind = ind || Object.assign(document.createElement('div'), { className: 'edge-back', innerHTML: ic('back') });
+    document.body.appendChild(ind); ind.style.top = (y0 - 22) + 'px'; ind.style.setProperty('--x', '0'); ind.classList.remove('go');
+  }, { passive: true });
+  addEventListener('touchmove', e => {
+    if (!on) return; const t = e.touches[0]; dx = t.clientX - x0;
+    if (Math.abs(t.clientY - y0) > 60 && dx < 30) { on = false; ind.remove(); return; }
+    const p = Math.max(0, Math.min(1, dx / 90)); ind.style.setProperty('--x', p); ind.classList.toggle('go', p >= 1);
+  }, { passive: true });
+  addEventListener('touchend', () => {
+    if (!on) return; on = false; const back = dx >= 90; ind.classList.add('out'); setTimeout(() => { ind.remove(); ind.classList.remove('out'); }, 200);
+    if (back) { if (history.length > 1) history.back(); else go('inicio'); }
+  });
+})();
 document.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('[data-card]')) { ev.preventDefault(); ev.target.click(); } });
 document.addEventListener('click', ev => {
   const t = ev.target.closest('button, [data-ex], [data-card]'); if (!t) { if (ev.target.id === 'modal') closeEx(); return; }
